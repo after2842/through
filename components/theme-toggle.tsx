@@ -1,52 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useThemePreference } from "@/lib/theme";
 import styles from "./theme-toggle.module.css";
 
-type Theme = "light" | "dark";
-const preferenceKey = "through.theme";
-
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme | null>(null);
-  const preference = useRef<Theme | null>(null);
-
-  useEffect(() => {
-    const system = window.matchMedia("(prefers-color-scheme: dark)");
-
-    try {
-      const saved = window.localStorage.getItem(preferenceKey);
-      if (saved === "light" || saved === "dark") preference.current = saved;
-    } catch {
-      // A theme choice still works when browser storage is unavailable.
-    }
-
-    const applySystem = () => {
-      const next = preference.current ?? (system.matches ? "dark" : "light");
-      document.documentElement.dataset.theme = next;
-      setTheme(next);
-    };
-
-    const initial = document.documentElement.dataset.theme;
-    if (initial === "light" || initial === "dark") {
-      setTheme(initial);
-    } else {
-      applySystem();
-    }
-    system.addEventListener("change", applySystem);
-    return () => system.removeEventListener("change", applySystem);
-  }, []);
-
-  function toggleTheme() {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    preference.current = next;
-    document.documentElement.dataset.theme = next;
-    setTheme(next);
-    try {
-      window.localStorage.setItem(preferenceKey, next);
-    } catch {
-      // Keep the selected theme for this page when persistence is blocked.
-    }
-  }
+  const { theme, setPreference } = useThemePreference();
+  function toggleTheme() { setPreference(theme === "dark" ? "Light" : "Dark"); }
 
   const label = theme ? `Switch to ${theme === "dark" ? "light" : "dark"} mode` : "Change color theme";
 

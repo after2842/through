@@ -5,7 +5,7 @@ import {
 
 export type Role = "owner" | "admin" | "member" | "viewer";
 export type WorkspaceSession = DemoSession & {
-  user: { id: string; email: string; role: Role };
+  user: { id: string; email: string; role: Role; displayName: string };
   workspace: { id: string; name: string };
   backend: boolean;
 };
@@ -41,11 +41,29 @@ export function canManage(session: WorkspaceSession): boolean {
 }
 function notifySession() { window.dispatchEvent(new Event(DEMO_SESSION_EVENT)); }
 function localSession(session: DemoSession): WorkspaceSession {
-  return { ...session, user: { id: "local-demo", email: session.email, role: "owner" }, workspace: { id: "local-demo", name: "Your workspace" }, backend: false };
+  return { ...session, user: { id: "local-demo", email: session.email, role: "owner", displayName: session.displayName ?? "" }, workspace: { id: "local-demo", name: "Your workspace" }, backend: false };
 }
 function acceptSession(session: WireSession): WorkspaceSession {
   csrfToken = session.csrfToken;
-  return { email: session.user.email, user: session.user, workspace: session.workspace, accounts: session.accounts, accessPaused: session.workspace.accessPaused, backend: true };
+  return { email: session.user.email, displayName: session.user.displayName ?? "", user: { ...session.user, displayName: session.user.displayName ?? "" }, workspace: session.workspace, accounts: session.accounts, accessPaused: session.workspace.accessPaused, backend: true };
+}
+
+export async function updateProfile(displayName: string): Promise<WorkspaceSession> {
+  const name = displayName.trim();
+  if ([...name].length > 80 || /[\u0000-\u001f\u007f-\u009f]/.test(name)) throw new APIError("Use a name of 80 characters or fewer, without control characters.", 400, "invalid_request");
+  if (serviceMode) {
+    const session = acceptSession(await request<WireSession>("/me", { method: "PATCH", body: { displayName: name }, authenticated: true }));
+    notifySession(); return session;
+  }
+  const session = requireLocalSession();
+  const next = { ...session, displayName: name, user: { ...session.user, displayName: name } };
+  saveDemoSession(next); recordDemoEvent(next, "profile.updated"); return next;
+}
+
+export async function signOutOtherSessions(): Promise<{ revokedSessions: number }> {
+  if (serviceMode) return request<{ revokedSessions: number }>("/auth/logout-others", { method: "POST", authenticated: true });
+  requireLocalSession();
+  return { revokedSessions: 0 };
 }
 async function request<T>(path: string, options: { method?: string; body?: unknown; authenticated?: boolean; idempotencyKey?: string } = {}): Promise<T> {
   const method = options.method ?? "GET";

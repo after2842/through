@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SiteHeader from "@/components/site-header";
 import SelectField from "@/components/select-field";
-import { APIError, canManage, createAccount, errorMessage, getSession, removeAccount, setAccessPaused, signOut, testHandoff, type WorkspaceSession } from "@/lib/client";
+import { APIError, canManage, createAccount, errorMessage, getSession, removeAccount, setAccessPaused, testHandoff, type WorkspaceSession } from "@/lib/client";
 import { type AgentName, type DemoAccount, type ServiceName } from "@/lib/demo-session";
 import styles from "./accounts-workspace.module.css";
 
@@ -194,15 +194,6 @@ export default function AccountsWorkspace() {
     finally { finishMutation(); }
   }
 
-  async function handleSignOut() {
-    if (!beginMutation("signout")) return;
-    try {
-      await signOut();
-      if (mounted.current) router.replace("/");
-    } catch (failure) { await showFailure(failure); }
-    finally { finishMutation(); }
-  }
-
   async function handleHandoff(account: DemoAccount) {
     if (!session || session.accessPaused || !beginMutation(`handoff:${account.id}`)) return;
     const key = handoffKeys.current.get(account.id) ?? crypto.randomUUID();
@@ -225,7 +216,7 @@ export default function AccountsWorkspace() {
     <div className="page app-page">
       <SiteHeader action={session && !loading && !loadError ? <>
         {manager && <Link href="/activity/" className={styles.textButton}>Activity</Link>}
-        <button type="button" className={styles.textButton} onClick={handleSignOut} disabled={busy}>{mutation === "signout" ? "Signing out…" : "Sign out"}</button>
+        <Link href="/settings/" className={styles.textButton}>Settings</Link>
       </> : undefined} />
       <main id="main" className={`app-main ${styles.main}`}>
         {loading || loadError || !session ? (

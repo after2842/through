@@ -50,6 +50,8 @@ All unsafe API requests require an exact allowed `Origin`. Authenticated mutatio
 | `POST /api/v1/auth/verify` | `{challengeId, code}` | Session DTO plus session cookie |
 | `GET /api/v1/session` | — | Session DTO or 401 |
 | `POST /api/v1/auth/logout` | No body | 204; revokes session and clears cookie |
+| `POST /api/v1/auth/logout-others` | No body | `{revokedSessions:number}`; retains this session |
+| `PATCH /api/v1/me` | `{displayName:string}` | Fresh Session DTO |
 | `POST /api/v1/accounts` | `{service, agent}` | Fresh Session DTO |
 | `DELETE /api/v1/accounts/{id}` | No body | Fresh Session DTO |
 | `PATCH /api/v1/workspace/access` | `{paused:boolean}` | Fresh Session DTO |
@@ -57,7 +59,11 @@ All unsafe API requests require an exact allowed `Origin`. Authenticated mutatio
 | `POST /api/v1/handoffs` | `{accountId, agent, targetOrigin, browserSessionId, tabId}` plus `Idempotency-Key` | 201 new receipt or 200 exact replay |
 | `GET /api/v1/handoffs/{id}` | — | Workspace-scoped receipt |
 
-A Session DTO contains `{user:{id,email,role}, workspace:{id,name,accessPaused}, accounts:[{id,service,agent,simulated:true}], csrfToken, mode:"demo", expiresAt}`. Responses are `Cache-Control: no-store`. Sessions expire after 8 hours and are not silently extended.
+A Session DTO contains `{user:{id,email,displayName,role}, workspace:{id,name,accessPaused}, accounts:[{id,service,agent,simulated:true}], csrfToken, mode:"demo", expiresAt}`. Responses are `Cache-Control: no-store`. Sessions expire after 8 hours and are not silently extended.
+
+Profile updates apply only to the authenticated user. Every workspace role may update its own optional display name: whitespace is trimmed, the limit is 80 Unicode code points, and control characters are rejected. Empty strings clear the name; missing/null fields and caller-selected user IDs, emails, or roles are rejected. Names persist across sessions and workspaces. A changed value records `profile.updated` in the active workspace without recording the old or new name; unchanged values do not create an audit event. Display names are presentation data, not verified identity.
+
+Signing out other sessions deletes all other stored sessions belonging to the authenticated user, including sessions in other workspaces, while preserving the calling session and other users' sessions. The response counts deleted rows, including expired sessions still awaiting cleanup. A nonzero deletion records `session.others_signed_out` in the active workspace with no target identifiers. Current session/membership authority is revalidated transactionally; a per-user lock serializes concurrent cross-workspace requests. A new sign-in after the deletion can create a session normally. These controls apply to through sessions, not external provider sessions or browser-demo tabs.
 
 Service enums: `GitHub`, `Linear`, `Notion`. Agent enums: `Claude`, `Codex`, `Cursor`. These are **illustrative choices**, not claims of installed or approved integrations. Canonical handoff origins are respectively `https://github.com`, `https://linear.app`, and `https://www.notion.so`; matching is exact. Arbitrary origins are rejected and no URL is fetched.
 
@@ -69,7 +75,7 @@ Errors are `{error:{code,message},requestId}`. Common statuses are 400 invalid i
 
 ## Enforcement and concurrency
 
-- Random opaque session tokens are stored only as SHA-256 digests. CSRF tokens are bound to their server-side session. Logout revokes that exact session; passwordless challenges are single-use and expire in five minutes.
+- Random opaque session tokens are stored only as SHA-256 digests. CSRF tokens are bound to their server-side session. Logout revokes that exact session; logout-others preserves the caller while revoking the user's other through sessions. Passwordless challenges are single-use and expire in five minutes.
 - Verification attempts increment atomically under a row lock; five wrong attempts exhaust a challenge. Expired or consumed challenges return `challenge_expired`; the fifth failed attempt and subsequent attempts return `challenge_exhausted`, allowing the UI to restart the flow. Email challenge issuance is limited to five per fifteen minutes using PostgreSQL locks, shared across replicas. A bounded process-local IP limiter also applies; it ignores `X-Forwarded-For`. Deploy an explicitly configured trusted ingress limiter before scaling. Process-local limits alone are not a global abuse-control system.
 - Each first-time email gets its own workspace. Matching company domains never auto-join tenants. Membership roles come from PostgreSQL. Only owners/admins may connect, revoke, pause, or request handoffs. There is no public role-escalation or membership management API.
 - Mutations revalidate current session and role in the transaction. Workspace row locks serialize pause, revocation, and handoffs. Duplicate account constraints and workspace-scoped idempotency uniqueness live in PostgreSQL.

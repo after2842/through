@@ -1,6 +1,6 @@
 # Product and implementation plan
 
-Updated October 28, 2026, America/Los_Angeles.
+Updated October 29, 2026, America/Los_Angeles.
 
 ## Product intent
 
@@ -21,6 +21,8 @@ The repository implements a frontend and a Go/PostgreSQL development sandbox. Ex
 | `/login` | Enter a dummy email, then `0000`; correct a code or start again | No email, authenticator enrollment, Google sign-in, or real identity verification |
 | `/accounts` | Owners/admins connect a sample service for one agent, inspect its destination, test a simulated handoff, disconnect, or pause/resume | Changes are server-enforced in service mode; no real provider permission or browser session changes |
 | `/activity` | Owners/admins inspect account, session, access, and simulated handoff events | Server history is workspace-scoped; static history is illustrative browser state |
+| `/pricing` | Compare proposed Personal, Team, and Enterprise plans | Draft USD prices only; no checkout, subscription, or billing integration |
+| `/settings` | Edit a display name, choose browser appearance, inspect the preview plan, and end sessions | Go persists the user profile and revokes other server sessions; static demo keeps a tab-local profile; MFA remains unconnected |
 | Role-aware navigation | Members/viewers inspect their allowed workspace state; owners/admins receive management actions | API authorization is authoritative; hiding a control is a UX decision, not a security boundary |
 | Sign-out and recovery | End a session, recover from a failed request, and sign in again after expiry | Service logout revokes the server session; static logout clears local demonstration state |
 
@@ -71,4 +73,4 @@ The [enterprise readiness record](enterprise-readiness.md) owns the complete rel
 
 Do not claim universal login support, enterprise certification, uptime guarantees, or production readiness from this development delivery. Measure real login completion, return to the original task, user interventions, revocation latency, and recovery success; simulations do not count as successful customer logins.
 
-Pricing, testimonials, logo walls, unused administration controls, and additional marketing sections remain deferred. Add a page or control only when a verified capability or concrete user task needs it.
+Pricing is now a separate proposed-plan page, with $19/month Personal, $39/member/month Team, and custom Enterprise pricing. These are editable draft product decisions, not a launched commercial offer. User settings is reachable from signed-in navigation; sign-out is centralized there. Theme choices System/Light/Dark synchronize with the header toggle and persist on the browser. Changing a name is not identity verification. Testimonials, logo walls, unused administration controls, and additional marketing sections remain deferred. Add a page or control only when a verified capability or concrete user task needs it.

@@ -80,6 +80,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/v1/auth/verify", s.verify)
 	mux.Handle("GET /api/v1/session", s.auth(http.HandlerFunc(s.session)))
 	mux.Handle("POST /api/v1/auth/logout", s.auth(http.HandlerFunc(s.logout)))
+	mux.Handle("POST /api/v1/auth/logout-others", s.auth(http.HandlerFunc(s.logoutOthers)))
+	mux.Handle("PATCH /api/v1/me", s.auth(http.HandlerFunc(s.updateProfile)))
 	mux.Handle("POST /api/v1/accounts", s.auth(http.HandlerFunc(s.addAccount)))
 	mux.Handle("DELETE /api/v1/accounts/{id}", s.auth(http.HandlerFunc(s.removeAccount)))
 	mux.Handle("PATCH /api/v1/workspace/access", s.auth(http.HandlerFunc(s.access)))
@@ -201,6 +203,37 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &http.Cookie{Name: CookieName, Value: "", Path: "/", Secure: s.cfg.CookieSecure, HttpOnly: true, SameSite: http.SameSiteStrictMode, Expires: time.Unix(1, 0), MaxAge: -1})
 	w.WriteHeader(204)
+}
+func (s *Server) logoutOthers(w http.ResponseWriter, r *http.Request) {
+	// This endpoint accepts no caller-selected user or session identifiers.
+	if r.ContentLength != 0 || len(r.TransferEncoding) != 0 {
+		s.fail(w, r, core.Invalid("This action does not accept a request body."))
+		return
+	}
+	count, e := s.store.LogoutOthers(r.Context(), principal(r))
+	if e != nil {
+		s.fail(w, r, e)
+		return
+	}
+	s.json(w, 200, map[string]int64{"revokedSessions": count})
+}
+func (s *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		DisplayName *string `json:"displayName"`
+	}
+	if e := decode(w, r, &body); e != nil {
+		s.fail(w, r, e)
+		return
+	}
+	if body.DisplayName == nil {
+		s.fail(w, r, core.Invalid("Specify a display name, or leave it empty to clear it."))
+		return
+	}
+	if e := s.store.UpdateProfile(r.Context(), principal(r), *body.DisplayName); e != nil {
+		s.fail(w, r, e)
+		return
+	}
+	s.session(w, r)
 }
 func (s *Server) addAccount(w http.ResponseWriter, r *http.Request) {
 	var body struct {

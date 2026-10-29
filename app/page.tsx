@@ -8,7 +8,7 @@ import UseCase from "@/components/use-case";
 export default function Home() {
   const publicHome = (
     <div className="page landing-page">
-      <SiteHeader action={<Link className="quiet-link" href="/login/">Sign in <span aria-hidden="true">↗</span></Link>} />
+      <SiteHeader action={<><Link className="quiet-link" href="/pricing/">Pricing</Link><Link className="quiet-link" href="/login/">Sign in <span aria-hidden="true">↗</span></Link></>} />
       <main id="main" className="landing-main">
         <section className="hero-stage" aria-labelledby="headline">
           <div className="introduction">

@@ -10,6 +10,8 @@ import (
 	"net/mail"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 type Error struct {
@@ -48,6 +50,24 @@ func Email(value string) (string, error) {
 	return value, nil
 }
 
+// DisplayName accepts an optional name, never a credential or identity proof.
+// Count Unicode code points instead of bytes so non-ASCII names have the same limit.
+func DisplayName(value string) (string, error) {
+	if !utf8.ValidString(value) {
+		return "", Invalid("Enter a valid display name.")
+	}
+	for _, r := range value {
+		if unicode.IsControl(r) {
+			return "", Invalid("Display names cannot contain control characters.")
+		}
+	}
+	value = strings.TrimSpace(value)
+	if utf8.RuneCountInString(value) > 80 {
+		return "", Invalid("Use 80 characters or fewer for your display name.")
+	}
+	return value, nil
+}
+
 var ServiceOrigins = map[string]string{"GitHub": "https://github.com", "Linear": "https://linear.app", "Notion": "https://www.notion.so"}
 
 func ValidAccount(service, agent string) bool {
@@ -57,9 +77,10 @@ func ValidAccount(service, agent string) bool {
 func CanWrite(role string) bool { return role == "owner" || role == "admin" }
 
 type User struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	DisplayName string `json:"displayName"`
+	Role        string `json:"role"`
 }
 type Workspace struct {
 	ID           string `json:"id"`
@@ -142,6 +163,8 @@ type Store interface {
 	Authenticate(context.Context, string) (*Principal, error)
 	Session(context.Context, *Principal) (*Session, error)
 	Logout(context.Context, *Principal) error
+	LogoutOthers(context.Context, *Principal) (int64, error)
+	UpdateProfile(context.Context, *Principal, string) error
 	AddAccount(context.Context, *Principal, string, string) error
 	RemoveAccount(context.Context, *Principal, string) error
 	SetPaused(context.Context, *Principal, bool) error

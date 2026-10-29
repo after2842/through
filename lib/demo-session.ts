@@ -2,7 +2,7 @@
 export type AgentName = "Claude" | "Codex" | "Cursor";
 export type ServiceName = "GitHub" | "Linear" | "Notion";
 export type DemoAccount = { id: string; service: ServiceName; agent: AgentName };
-export type DemoSession = { email: string; accounts: DemoAccount[]; accessPaused: boolean };
+export type DemoSession = { email: string; displayName?: string; accounts: DemoAccount[]; accessPaused: boolean };
 export const DEMO_SESSION_EVENT = "through:session-change";
 
 const STORAGE_KEY = "through.demo.v1";
@@ -15,6 +15,7 @@ function isDemoSession(value: unknown): value is DemoSession {
   return typeof session.email === "string" && session.email.length <= 254
     && /^[^\s@]+@[^\s@]+$/.test(session.email)
     && typeof session.accessPaused === "boolean"
+    && (session.displayName === undefined || (typeof session.displayName === "string" && [...session.displayName].length <= 80 && !/[\u0000-\u001f\u007f-\u009f]/.test(session.displayName)))
     && Array.isArray(session.accounts) && session.accounts.length <= 9
     && session.accounts.every((account: unknown) => {
       if (!account || typeof account !== "object") return false;
@@ -38,6 +39,7 @@ export function saveDemoSession(session: DemoSession): void {
   if (!isDemoSession(session)) throw new Error("Invalid demo session.");
   window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
     email: session.email,
+    displayName: session.displayName ?? "",
     accounts: session.accounts.map(({ id, service, agent }) => ({ id, service, agent })),
     accessPaused: session.accessPaused,
   }));

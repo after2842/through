@@ -85,3 +85,11 @@ These checks were reported by the root agent; this document review independently
 ## Release decision
 
 **Current decision: the credential-free development sandbox is validated for local delivery within the recorded scope.** External integrations remain deliberate placeholders. Docker/Compose execution, hosted CI, a full accessibility audit, and a real customer pilot are not claimed. Static-preview publication is a separate frontend artifact and does not deploy the Go/PostgreSQL service. The customer pilot remains blocked by the provider and operational gates above; no production-ready or certification claim is approved.
+
+## October 29 update: pricing and user settings
+
+Added a separate `/pricing` page with explicitly proposed USD plans and no billing/checkout integration. Signed-in navigation now exposes `/settings`; sign-out is available there. Settings includes an optional display name, synchronized System/Light/Dark appearance, the free-preview plan, and development sign-in status. In Go mode it can revoke all of the current user's other sessions while preserving this session; the browser-only demo does not show a fake remote-session control.
+
+Migration 003 persists display names. Profile editing and session revocation require the existing Origin and CSRF protections. Every authenticated role may edit its own profile; user identity comes from the current server session. Display names are limited to 80 Unicode code points, reject control characters, and are omitted from audit metadata. Cross-workspace session revocation is user-scoped and serialized; the current session is revalidated inside the transaction.
+
+Verification: both frontend modes built, TypeScript passed, and real PostgreSQL tests passed with `go test -race -count=1 ./...` plus `go vet ./...`. Six new integration tests cover Unicode validation, persistence, roles, user isolation, concurrent revocation, HTTP boundaries, and audit-failure rollback. Browser checks covered profile save/reload in both modes, System selection by keyboard, header/theme synchronization, 320 px light and desktop dark layouts, authentication redirect, one additional session revoked through Settings, preservation of the current session, and sign-out. The production build browser console had no errors during the settings check. Billing and real MFA remain unconnected.

@@ -5,6 +5,7 @@ if (!["demo", "service"].includes(apiMode)) throw new Error("NEXT_PUBLIC_API_MOD
 
 const nextConfig: NextConfig = {
   output: "export",
+  agentRules: false,
   trailingSlash: true,
   images: { unoptimized: true },
   poweredByHeader: false,

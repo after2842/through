@@ -140,7 +140,7 @@ func (s *Store) Authenticate(ctx context.Context, token string) (*core.Principal
 }
 func (s *Store) Session(ctx context.Context, p *core.Principal) (*core.Session, error) {
 	result := &core.Session{Mode: "demo", Accounts: []core.Account{}}
-	e := s.Pool.QueryRow(ctx, "SELECT u.id,u.email,m.role,w.id,w.name,w.access_paused,s.csrf_token,s.expires_at FROM sessions s JOIN users u ON u.id=s.user_id JOIN workspaces w ON w.id=s.workspace_id JOIN memberships m ON m.workspace_id=w.id AND m.user_id=u.id WHERE s.token_hash=$1 AND s.workspace_id=$2 AND s.user_id=$3 AND s.expires_at>now()", p.SessionHash, p.WorkspaceID, p.UserID).Scan(&result.User.ID, &result.User.Email, &result.User.Role, &result.Workspace.ID, &result.Workspace.Name, &result.Workspace.AccessPaused, &result.CSRFToken, &result.ExpiresAt)
+	e := s.Pool.QueryRow(ctx, "SELECT u.id,u.email,u.display_name,m.role,w.id,w.name,w.access_paused,s.csrf_token,s.expires_at FROM sessions s JOIN users u ON u.id=s.user_id JOIN workspaces w ON w.id=s.workspace_id JOIN memberships m ON m.workspace_id=w.id AND m.user_id=u.id WHERE s.token_hash=$1 AND s.workspace_id=$2 AND s.user_id=$3 AND s.expires_at>now()", p.SessionHash, p.WorkspaceID, p.UserID).Scan(&result.User.ID, &result.User.Email, &result.User.DisplayName, &result.User.Role, &result.Workspace.ID, &result.Workspace.Name, &result.Workspace.AccessPaused, &result.CSRFToken, &result.ExpiresAt)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return nil, core.ErrUnauthorized
 	}
@@ -210,6 +210,55 @@ func (s *Store) Logout(ctx context.Context, p *core.Principal) error {
 			return e
 		}
 		return audit(ctx, tx, p, "session.signed_out", "")
+	})
+}
+
+// LogoutOthers revokes this user's sessions across all workspaces. Taking a
+// per-user advisory lock before workspace/session locks prevents concurrent
+// callers in different workspaces from waiting on each other's session rows.
+func (s *Store) LogoutOthers(ctx context.Context, p *core.Principal) (int64, error) {
+	tx, e := s.Pool.Begin(ctx)
+	if e != nil {
+		return 0, e
+	}
+	defer tx.Rollback(ctx)
+	if _, e = tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1, 2))", p.UserID); e != nil {
+		return 0, e
+	}
+	if _, e = lockPolicy(ctx, tx, p, false); e != nil {
+		return 0, e
+	}
+	result, e := tx.Exec(ctx, "DELETE FROM sessions WHERE user_id=$1 AND token_hash<>$2", p.UserID, p.SessionHash)
+	if e != nil {
+		return 0, e
+	}
+	count := result.RowsAffected()
+	if count > 0 {
+		if e = audit(ctx, tx, p, "session.others_signed_out", ""); e != nil {
+			return 0, e
+		}
+	}
+	if e = tx.Commit(ctx); e != nil {
+		return 0, e
+	}
+	return count, nil
+}
+
+func (s *Store) UpdateProfile(ctx context.Context, p *core.Principal, value string) error {
+	displayName, e := core.DisplayName(value)
+	if e != nil {
+		return e
+	}
+	return s.mutate(ctx, p, false, func(tx pgx.Tx) error {
+		result, e := tx.Exec(ctx, "UPDATE users SET display_name=$1 WHERE id=$2 AND display_name IS DISTINCT FROM $1", displayName, p.UserID)
+		if e != nil {
+			return e
+		}
+		if result.RowsAffected() == 0 {
+			return nil
+		}
+		// The new/previous name is intentionally absent from audit metadata.
+		return audit(ctx, tx, p, "profile.updated", "")
 	})
 }
 func (s *Store) AddAccount(ctx context.Context, p *core.Principal, service, agent string) error {
