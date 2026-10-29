@@ -1,0 +1,38 @@
+# Explicitly development-only. Requires Docker Compose; the application refuses
+# production mode while its identity/vault/browser dependencies are placeholders.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: through
+      POSTGRES_USER: through
+      POSTGRES_PASSWORD: through-local-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U through -d through"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - through-postgres:/var/lib/postgresql/data
+    # Database is intentionally not published to the host or external network.
+  api:
+    build: .
+    environment:
+      THROUGH_ENV: development
+      THROUGH_DEMO_AUTH: "true"
+      THROUGH_ADDR: 0.0.0.0:8080
+      THROUGH_DATABASE_URL: postgres://through:through-local-only@postgres:5432/through?sslmode=disable
+      THROUGH_ALLOWED_ORIGINS: http://127.0.0.1:8080
+      THROUGH_STATIC_DIR: /site
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ../out:/site:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  through-postgres:

@@ -1,0 +1,15 @@
+CREATE TABLE workspaces (id text PRIMARY KEY, name text NOT NULL, access_paused boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE users (id text PRIMARY KEY, email text UNIQUE NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE memberships (workspace_id text NOT NULL REFERENCES workspaces(id), user_id text NOT NULL REFERENCES users(id), role text NOT NULL CHECK (role IN ('owner','admin','member','viewer')), PRIMARY KEY (workspace_id,user_id));
+CREATE TABLE challenges (id text PRIMARY KEY, email text NOT NULL, expires_at timestamptz NOT NULL, attempts int NOT NULL DEFAULT 0 CHECK(attempts BETWEEN 0 AND 5), consumed_at timestamptz, created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX challenge_email_time ON challenges(email,created_at DESC);
+CREATE TABLE sessions (token_hash text PRIMARY KEY, user_id text NOT NULL, workspace_id text NOT NULL, csrf_token text NOT NULL, expires_at timestamptz NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), FOREIGN KEY(workspace_id,user_id) REFERENCES memberships(workspace_id,user_id));
+CREATE INDEX session_expiry ON sessions(expires_at);
+CREATE TABLE accounts (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id), service text NOT NULL CHECK(service IN ('GitHub','Linear','Notion')), agent text NOT NULL CHECK(agent IN ('Claude','Codex','Cursor')), simulated boolean NOT NULL DEFAULT true CHECK(simulated), revoked_at timestamptz, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(workspace_id,id));
+CREATE UNIQUE INDEX account_active_identity ON accounts(workspace_id,service,agent) WHERE revoked_at IS NULL;
+CREATE TABLE handoffs (id text PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id), account_id text NOT NULL, agent text NOT NULL, target_origin text NOT NULL, browser_session_id text NOT NULL, tab_id text NOT NULL, status text NOT NULL CHECK(status='simulated'), simulated boolean NOT NULL CHECK(simulated), created_at timestamptz NOT NULL, expires_at timestamptz NOT NULL, consumed_at timestamptz NOT NULL, idempotency_key text NOT NULL, request_hash text NOT NULL, FOREIGN KEY(workspace_id,account_id) REFERENCES accounts(workspace_id,id), UNIQUE(workspace_id,idempotency_key));
+CREATE TABLE audit_events (id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, workspace_id text NOT NULL REFERENCES workspaces(id), actor_id text NOT NULL REFERENCES users(id), action text NOT NULL, target text NOT NULL DEFAULT '', occurred_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX audit_workspace_id ON audit_events(workspace_id,id DESC);
+CREATE FUNCTION protect_audit_events() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'audit_events are append-only'; END $$;
+CREATE TRIGGER audit_no_changes BEFORE UPDATE OR DELETE ON audit_events FOR EACH ROW EXECUTE FUNCTION protect_audit_events();
+CREATE TRIGGER audit_no_truncate BEFORE TRUNCATE ON audit_events FOR EACH STATEMENT EXECUTE FUNCTION protect_audit_events();

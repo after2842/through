@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+.git
+/through
+# Keep the application entrypoint even if an ignore matcher treats names recursively.
+!cmd/through/
+!cmd/through/**
+coverage.out
+*.test

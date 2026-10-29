@@ -32,3 +32,6 @@
 @media(max-width:600px){.heading{display:block;margin-bottom:36px}.heading>.textButton{margin-top:16px}.title{font-size:54px}.account{gap:14px}.accountStatus{min-width:64px;font-size:11px}.fields{gap:14px}.formActions{gap:20px}.formTitle{font-size:30px}.identity{font-size:12px}}
 @media(max-width:460px){.fields{grid-template-columns:1fr}}
 @media(max-width:360px){.title{font-size:46px}.fields{grid-template-columns:1fr}.account{gap:10px}.formActions{flex-wrap:wrap;gap:8px 20px}.primaryButton{gap:20px;padding-inline:16px}}
+.accountActions{display:flex;align-items:center;gap:22px}
+.scope{margin:16px 0 0;color:var(--muted);font-size:12px;line-height:1.7}
+@media(max-width:600px){.account{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;padding-block:18px}.accountActions{grid-column:1 / -1;justify-content:flex-start;gap:24px}.accountName>span{overflow-wrap:anywhere}.accountStatus{justify-content:flex-end}.accountActions>.textButton{min-height:44px}.accountActions>.removeButton{min-width:0}}

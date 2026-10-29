@@ -1,3 +1,4 @@
+import EnvironmentNote from "@/components/environment-note";
 import type { Metadata } from "next";
 import SiteHeader from "@/components/site-header";
 import LoginForm from "@/components/login-form";
@@ -15,7 +16,7 @@ export default function LoginPage() {
       <main id="main" className="app-main">
         <LoginForm />
       </main>
-      <footer className="app-footer">Demo only · No real accounts are connected.</footer>
+      <footer className="app-footer"><EnvironmentNote /></footer>
     </div>
   );
 }

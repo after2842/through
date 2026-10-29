@@ -22,7 +22,7 @@ Do this before polishing the visual treatment. A smaller font or more compact ca
 - Retain Instrument Serif for expressive headings and DM Sans for functional copy. Give typography and space the work usually assigned to cards and decoration.
 - Prefer quiet, unboxed compositions, thin rules, and deliberate alignment. Seek a layout that fits the content instead of defaulting to a centered hero followed by interchangeable card grids.
 - Novelty must improve hierarchy or comprehension. Keep familiar controls and expected interaction behavior.
-- The signed-out landing page has its main composition and exactly one lower section illustrating a concrete use case. Add further sections only when the user changes that scope.
+- The signed-out landing page has its main composition and exactly one lower section illustrating a concrete use case. Use screenshot-like fictional screens to show password entry and resumed work, with masked dots and an illustrative-demo label. Add further sections only when the user changes that scope.
 
 ## Content and interaction
 
@@ -35,14 +35,18 @@ Do this before polishing the visual treatment. A smaller font or more compact ca
 - Place loading, success, and recoverable errors near the action that caused them. Retain useful input after a correctable error and make retries possible.
 - Use visible labels, semantic controls, keyboard access, visible focus, touch targets of about 44 px, and reduced-motion behavior. Check narrow screens without horizontal overflow.
 - Disclose demo behavior where it affects expectations. Do not repeat the same disclaimer throughout a page.
+- Wait for the API before confirming a change. Preserve useful inputs after errors, disable conflicting writes while pending, and keep retries safe. An API failure must never switch the user to local demo state.
+- Show only actions the current role can use; retain a concise read-only explanation where it resolves confusion. Keep Activity and revocation discoverable without adding a dashboard of unused controls.
 
 ## Authentication-specific boundaries
 
-The current experience is a frontend simulation. The authenticator step accepts the demo code `0000`; it is not real MFA, Google sign-in, or a connection to Google Authenticator. Never ask users to paste real passwords, OTP seeds, backup codes, or provider tokens into this demo.
+There are two explicit builds: a static browser-only demo and a Go-connected development sandbox. The Go mode persists workspace changes and enforces permissions on the server, but external identity, authenticator, vault, and browser adapters remain placeholders in both modes. The code `0000` is not real MFA, Google sign-in, or a connection to Google Authenticator. Never request real passwords, OTP seeds, backup codes, or provider tokens in this environment.
 
-Account connections, agent selection, access pause/resume, and sign-out represent local demo state. Do not imply that selecting an agent installs a plugin or that removing a demo account revokes a real provider session. Keep that distinction clear without placing implementation details in every flow.
+Account connections and handoff tests represent sample permission state and simulated external outcomes. Do not imply that choosing an agent installs a plugin, that a handoff completed a real login, or that removing an account revokes a real provider session. Keep exact destination and paused state visible where users decide access. Label successful handoff tests as demos.
 
-Avoid universal login promises, unverified platform support, partner logos presented as endorsements, fabricated customer proof, and absolute security claims. Use the [product plan](../../../docs/product-plan.md) and [dated platform research](../../../docs/research/agent-login-platforms.md) when a change depends on those facts.
+The proposition may say “Let your agent enter your password and sign in.” Pair it with permission-aware copy and the illustrative status of the current experience; screenshots must use fictional data and masked dots. Do not turn the proposed capability into a claim of a verified commercial integration.
+
+Avoid universal login promises, unverified support, partner logos presented as endorsements, fabricated customer proof, absolute security claims, and production-readiness claims. Use the [product plan](../../../docs/product-plan.md), [enterprise readiness record](../../../docs/enterprise-readiness.md), and [dated platform research](../../../docs/research/agent-login-platforms.md) when a change depends on those facts.
 
 ## Final review
 

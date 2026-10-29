@@ -1,33 +1,44 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import SiteHeader from "@/components/site-header";
 import MemberHome from "@/components/member-home";
-import { readDemoSession, type DemoSession } from "@/lib/demo-session";
+import { DEMO_SESSION_EVENT, errorMessage, getSession, type WorkspaceSession } from "@/lib/client";
 import styles from "./member-home.module.css";
 
 export default function HomeRouter({ publicHome }: { publicHome: ReactNode }) {
-  const [session, setSession] = useState<DemoSession | null>(null);
+  const [session, setSession] = useState<WorkspaceSession | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
+  const mounted = useRef(false);
+  const sequence = useRef(0);
 
-  const refreshSession = useCallback(() => {
+  const refreshSession = useCallback(async () => {
+    const request = ++sequence.current;
+    setError("");
     try {
-      setSession(readDemoSession());
-      setError(false);
-    } catch {
-      setError(true);
+      const next = await getSession();
+      if (!mounted.current || sequence.current !== request) return;
+      setSession(next);
+      setLoaded(true);
+    } catch (failure) {
+      if (!mounted.current || sequence.current !== request) return;
+      setError(errorMessage(failure));
+      setLoaded(true);
     }
-    setLoaded(true);
   }, []);
 
   useEffect(() => {
-    refreshSession();
-    window.addEventListener("through:session-change", refreshSession);
-    window.addEventListener("pageshow", refreshSession);
+    mounted.current = true;
+    void refreshSession();
+    const refresh = () => { void refreshSession(); };
+    window.addEventListener(DEMO_SESSION_EVENT, refresh);
+    window.addEventListener("pageshow", refresh);
     return () => {
-      window.removeEventListener("through:session-change", refreshSession);
-      window.removeEventListener("pageshow", refreshSession);
+      mounted.current = false;
+      sequence.current += 1;
+      window.removeEventListener(DEMO_SESSION_EVENT, refresh);
+      window.removeEventListener("pageshow", refresh);
     };
   }, [refreshSession]);
 
@@ -43,8 +54,8 @@ export default function HomeRouter({ publicHome }: { publicHome: ReactNode }) {
         <SiteHeader />
         <main id="main" className={`app-main ${styles.main}`}>
           <div className={styles.loading} role={error ? "alert" : "status"}>
-            <p>{error ? "Your workspace couldn’t be opened. Try again." : "Opening through…"}</p>
-            {error && <button type="button" className={styles.textButton} onClick={refreshSession}>Try again <span aria-hidden="true">↗</span></button>}
+            <p>{error || "Opening through…"}</p>
+            {error && <button type="button" className={styles.textButton} onClick={() => { setLoaded(false); void refreshSession(); }}>Try again <span aria-hidden="true">↗</span></button>}
           </div>
         </main>
       </div>

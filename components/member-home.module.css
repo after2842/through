@@ -38,3 +38,4 @@
   .workspace { gap: 36px; }
   .description { font-size: 13px; }
 }
+.signOut:disabled { opacity: .55; cursor: wait; }

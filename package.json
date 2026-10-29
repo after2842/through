@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build",
-    "typecheck": "tsc --noEmit"
+    "build": "npm run build:demo",
+    "typecheck": "tsc --noEmit",
+    "build:demo": "NEXT_PUBLIC_API_MODE=demo next build",
+    "build:service": "NEXT_PUBLIC_API_MODE=service next build"
   },
   "dependencies": {
     "next": "16.4.3",

@@ -4,86 +4,71 @@ Updated October 28, 2026, America/Los_Angeles.
 
 ## Product intent
 
-When an existing AI agent reaches a login screen, through should let it use an account the user has already connected and resume its task in the same browser tab. Users should be able to see and stop that access. The target audience is US and English-speaking users and businesses.
+When an existing AI agent reaches a login screen, through should let it use an account the user has connected and resume its task in the same browser tab. Users should understand, inspect, and stop that permission. The audience is US and English-speaking users and businesses.
 
-This is the intended product, not the current integration capability. A marketplace listing or MCP connection alone does not grant privileged access to a host's browser. Platform adapters, a safe secret-entry mechanism, and provider-specific authentication support remain dependencies. See the [research snapshot](research/agent-login-platforms.md).
+This is the intended product, not proof of a commercial integration. A marketplace listing or MCP connection alone does not provide privileged access to a host's browser. A protected credential-entry mechanism, host permission, and provider-specific authentication support remain dependencies. See the [platform research](research/agent-login-platforms.md).
 
-The [through UX skill](../.agents/skills/through-ux/SKILL.md) defines the continuing design direction. The product should require little explanation because each page makes its next action clear.
+The [through UX skill](../.agents/skills/through-ux/SKILL.md) defines the continuing design direction. The [enterprise readiness record](enterprise-readiness.md) defines staged release requirements; [acceptance criteria](acceptance-criteria.md) distinguish implemented controls, verified evidence, and unresolved work.
 
-## Frontend delivery scope
+## Current delivery
 
-The current iteration implements the following simulated flow. It does not implement production identity or third-party account access.
+The repository implements a frontend and a Go/PostgreSQL development sandbox. External identity, authenticator, vault, and browser operations remain placeholders. `0000` verifies a fictional development challenge; it does not verify email ownership or a second factor.
 
-| Route or capability | Behavior | Boundary |
+| Route or capability | User task | Boundary |
 |---|---|---|
-| `/`, signed out | Core product message, handoff demo, sign-in entry, and one illustrative use case: a weekly Linear brief continuing through a login wall | Example only; no claim of a working Linear integration |
-| `/`, signed in | Personal workspace with connected accounts, ready/paused state, and the next setup or management action | Reads the same local demo state as `/accounts` |
-| `/login` | Enter an email, then an authenticator-style code; `0000` passes the demo challenge | No email is sent; no real authenticator, OAuth, or MFA verification occurs |
-| `/accounts` | Show connected demo services, add a service and choose an agent, remove a connection, pause or resume all demo access | Local state only; no plugin installation or provider permissions change |
-| Session navigation | Sign-in returns to the member home; signed-out account routes go to login; sign-out clears the demo session and returns to the public home | Browser state is not authorization; direct access to static assets remains possible |
+| `/`, signed out | Understand the product and try one illustrative handoff; see one lower use case showing a login screen and resumed work | Screens contain fictional data and masked dots, with an explicit illustrative-demo label; no tested external integration claim |
+| `/`, signed in | See actual workspace connection state and the next useful action | Service mode reads the authenticated workspace from Go; static mode reads local demo state |
+| `/login` | Enter a dummy email, then `0000`; correct a code or start again | No email, authenticator enrollment, Google sign-in, or real identity verification |
+| `/accounts` | Owners/admins connect a sample service for one agent, inspect its destination, test a simulated handoff, disconnect, or pause/resume | Changes are server-enforced in service mode; no real provider permission or browser session changes |
+| `/activity` | Owners/admins inspect account, session, access, and simulated handoff events | Server history is workspace-scoped; static history is illustrative browser state |
+| Role-aware navigation | Members/viewers inspect their allowed workspace state; owners/admins receive management actions | API authorization is authoritative; hiding a control is a UX decision, not a security boundary |
+| Sign-out and recovery | End a session, recover from a failed request, and sign in again after expiry | Service logout revokes the server session; static logout clears local demonstration state |
 
-Account and agent choices use custom comboboxes with keyboard navigation, type-ahead, focus management, and inline validation. The first-account action opens the connection form directly.
+The first account action opens the connection form directly. Custom dropdowns retain keyboard navigation, type-ahead, selection, and dismissal. Mutations show pending state, prevent conflicting actions, and confirm the server result before showing success. Cancellation applies before a request begins; an in-flight server mutation is not presented as safely cancellable. Network uncertainty during a handoff preserves its idempotency key for a retry of the same attempt.
 
-Every route supports light and dark themes. The initial theme follows the system, and an explicit choice persists in local storage under `through.theme`. Dark mode uses graphite, muted ice blue, and warm chalk; authentication and account data remain in session storage only.
+Keep the login flow to one field per step, a primary action, editable email, and useful feedback. Session-loading errors offer retry. Service errors never silently switch to a frontend simulation. Owners can reach Activity through a quiet link; member pages do not repeat marketing.
 
-Only non-secret demo data belongs in session storage. Never store real passwords, provider tokens, authenticator seeds, or recovery codes. The demo does not transmit entered account details to an authentication backend. Storage is scoped to the browser session and is not a durable account.
+## Two explicit runtime modes
 
-Keep the login flow small: one visible field per step, a clear primary action, an editable email, useful invalid-code feedback, and an explicit demo code hint. Calling the second step an authenticator demo is more accurate than presenting it as a working Google Authenticator integration.
+`npm run build:demo` produces the static browser-only demonstration. It uses session storage for fictional identity, account choices, and illustrative activity; `npm run build` selects this mode. The existing Sites deployment hosts only this static build and does not run Go or PostgreSQL.
 
-## Validation for this iteration
+`npm run build:service` produces the frontend for the same-origin Go API. Serve that export through Go or an explicitly configured equivalent ingress; both `/api/v1` and the frontend must resolve correctly on the application origin. Workspace and account state is durable in PostgreSQL. The frontend uses an opaque HttpOnly session cookie and server-issued CSRF token, rather than using local demo state as authorization. Build mode is selected at compilation, and both builds write to `out/`.
 
-Before considering the frontend complete:
+Service mode is still a development sandbox. It requires an explicit demo-auth opt-in, and the server's production default refuses startup while external adapters are placeholders. First-time dummy identities receive separate workspaces; matching company domains do not imply membership. Real identity and customer onboarding must replace this development behavior before a pilot.
 
-- Build the static export and pass TypeScript checks.
-- Inspect desktop and mobile views, keyboard focus, text contrast, and narrow-screen overflow.
-- Exercise invalid email, invalid code, successful code, back/edit-email, refresh, sign-out, and a signed-out visit to `/accounts`.
-- Exercise add, remove, and global pause/resume without losing the current state unexpectedly.
-- Confirm all UI, accessible names, error messages, and metadata are English.
-- Verify that every action is functional within the stated demo scope and that no screen claims real integration.
+Both modes support light and dark themes. A theme choice persists locally under `through.theme`; it is not account authorization. No real password, provider token, authenticator seed, or recovery code belongs in this product environment, request body, browser storage, or logs.
 
-Verification completed for the October 28 frontend iteration:
+See [backend documentation](../backend/README.md) for the API, configuration, migrations, transaction boundaries, and run instructions.
 
-- Next.js production build, TypeScript check, and static export passed for all three routes.
-- Browser checks covered invalid email, email editing with retained input and focus, invalid code and retry, `0000` sign-in, account connection, duplicate rejection, cancellation during connection, removal, pause/resume, persistence after refresh, sign-out, and signed-out route redirection.
-- Inspected desktop (1280 px), mobile (390 px), and narrow mobile (320 px) layouts. No horizontal page overflow was observed. Product screens and error messages were English; browser error logs were empty.
-- The repository UX skill passed the skill validator, and its local documentation links resolved.
+## Validation and evidence
 
-The home-and-theme revision also passed the production build and browser review:
+The prior frontend iterations were reviewed on desktop and narrow mobile, in both themes, for login, navigation, keyboard dropdown behavior, connection changes, and overflow. Those historical checks establish only the earlier frontend simulation.
 
-- Public home and signed-in home switch correctly after login, logout, navigation, and refresh. Ready, paused, and empty connection states were exercised, including removing the last paused connection.
-- Custom dropdowns passed required-choice and duplicate feedback, pointer selection, Arrow keys, Home/End, type-ahead, Enter/Space selection, Escape/Tab dismissal, and outside-click dismissal.
-- Theme choice survived refresh and navigation. Inspected both themes on desktop and dark layouts at 320 px, including the complete popup and the single use-case section; no horizontal overflow or browser errors was observed.
-- Color calculations verified at least 4.5:1 for active text and 3:1 for diagram arrows against their actual theme backgrounds. The revised dark palette uses graphite, muted ice blue, and warm chalk.
-- The updated repository UX skill passed validation.
+The Go-connected iteration adds these release checks:
 
-These checks cover the frontend simulation. They do not validate real authentication, provider connections, or agent access.
+- Build both explicit frontend modes and pass TypeScript checks.
+- Exercise login errors, expiry/restart, sign-out, session refresh, unavailable API, and retry without demo fallback.
+- Exercise account connection, duplicate rejection, removal, pause/resume, role restrictions, and exact destination display.
+- Verify handoff idempotency, tenant isolation, expiry, and revocation with real PostgreSQL integration tests and Go's race detector.
+- Inspect Activity scope, empty/error/loading states, and pagination where applicable.
+- Review desktop/mobile layouts, keyboard focus, theme contrast, English copy, and honest placeholder labeling.
+
+Record outcomes in [acceptance criteria](acceptance-criteria.md); a checklist or source change is not evidence that a test passed. The provided Docker recipe requires execution validation in a Docker-capable environment. CI is configured for frontend builds and real-database Go checks; no remote CI result is implied by committing its workflow.
 
 ## Next: prove one integration
 
-1. Start with a local Cursor proof of concept using harmless test strings and a test login page. Verify whether the documented input-replacement hook applies to its actual browser tool in the existing tab.
-2. Inspect every surface that could expose the substituted value: tool arguments and responses, transcript, logs, DOM snapshots, screenshots, and concurrent observers. Being able to fill a field is not proof of safe secret handling.
-3. If the native-browser path cannot meet the requirements, test Claude Code with the user's existing Chrome tab as a separately described integration. Do not silently substitute a new browser for the original task.
-4. Test successful login, expired session, additional verification, cancellation, and returning to the original agent task on a small supported-site set.
-5. Confirm the chosen platform's distribution and credential-handling rules before promising public availability.
+1. Start with a local Cursor proof of concept using harmless test strings and a test login page. Verify whether the documented input-replacement hook applies to its browser tool in the existing tab.
+2. Inspect tool arguments/results, transcripts, logs, DOM snapshots, screenshots, and concurrent observers. Filling a field alone does not demonstrate protected secret entry.
+3. If that path cannot meet the requirements, evaluate Claude Code with the user's existing Chrome tab as a separately described integration. Preserve the original task's browser context.
+4. Replace placeholder identity and vault operations with verified adapters and deliberate user consent. Test successful login, expiry, additional verification, cancellation, revocation, and task continuation on a bounded site set.
+5. Verify distribution and credential-handling rules before promising platform support or public availability.
 
-These are planned experiments. Neither the adapters nor protected credential entry are implemented in this repository.
+A real browser adapter also needs a durable, single-use execution protocol with safe recovery from unknown external outcomes. A PostgreSQL transaction cannot make a remote credential-entry effect atomic. The placeholder's immediate simulated outcome must not be copied into a production network integration.
 
-## Production work after feasibility
+## Pilot and general-availability gates
 
-| Area | Required outcome before shipping |
-|---|---|
-| through identity | Server-verified sessions, a real authenticator or identity-provider flow, enrollment and recovery, expiration, and revocation |
-| Account connection | Explicit user consent, account selection, a supported authorization or vault integration, and clear permission scope |
-| Secret handling | Credentials kept outside model context and ordinary tool logs, with a supported protected entry path and observation controls |
-| Agent access | Agent identity, bounded grants, revocation, and enforcement in the runtime rather than only in the UI |
-| Browser adapter | Permission to target the intended browser/session/tab and reliable continuation of the original task |
-| Provider behavior | Honest handling of challenges, device checks, CAPTCHA, passkeys, social sign-in, and expired sessions; user help when required |
-| Operations | A useful access history, failure recovery, and policies that match what the system actually does |
+The [enterprise readiness record](enterprise-readiness.md) owns the complete release requirements. Before a pilot, prove real identity/MFA and recovery, tenant administration, bounded agent identity and grants, protected credential entry, reliable revocation, restoration from backup, monitored operations, and a named incident responder. General availability additionally requires evidence from supported integrations, security review, operational exercises, and customer support/deletion processes.
 
-Choose the real authentication and vault architecture after the first adapter's constraints are known. The frontend's `0000` gate and session storage must be replaced, not extended into a security mechanism.
+Do not claim universal login support, enterprise certification, uptime guarantees, or production readiness from this development delivery. Measure real login completion, return to the original task, user interventions, revocation latency, and recovery success; simulations do not count as successful customer logins.
 
-Measure login completion, recovery success, agent task resumption, and user interventions per task. Do not promise that all websites can be accessed without interruption.
-
-## Intentionally deferred
-
-Pricing, customer testimonials, integration logos, enterprise administration, a large dashboard, and extra marketing pages add no necessary value to the current proof of concept. Introduce them only when the product has a verified capability or a user task that needs them.
+Pricing, testimonials, logo walls, unused administration controls, and additional marketing sections remain deferred. Add a page or control only when a verified capability or concrete user task needs it.
