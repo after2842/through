@@ -1,9 +1,6 @@
 .demo {
-  --paper: #faf8f1;
-  --sky: #c6e3f4;
-  --blue: #417b9b;
   width: 100%;
-  color: #242b29;
+  color: var(--ink);
 }
 .workflow {
   position: relative;
@@ -21,9 +18,9 @@
   height: 2px;
   overflow: visible;
 }
-.basePath { stroke: #dedfd8; stroke-width: 1; }
+.basePath { stroke: var(--line); stroke-width: 1; }
 .activePath {
-  stroke: var(--blue);
+  stroke: var(--sky-ink);
   stroke-width: 1.1;
   stroke-dasharray: 1000;
   stroke-dashoffset: 1000;
@@ -41,31 +38,31 @@
   width: 44px;
   height: 40px;
   background: var(--paper);
-  color: #626d65;
+  color: var(--muted);
 }
-.destinationSymbol { color: #babfb7; transition: color .5s ease; }
+.destinationSymbol { color: var(--faint); transition: color .5s ease; }
 .stationText { display: flex; align-items: baseline; gap: 9px; margin-top: 23px; white-space: nowrap; }
 .stationText strong { font-size: 15px; font-weight: 450; letter-spacing: -.025em; }
-.stationText span { font-size: 11px; color: #6f7b79; letter-spacing: -.025em; }
+.stationText span { font-size: 11px; color: var(--muted); letter-spacing: -.025em; }
 .threshold { display: flex; flex-direction: column; align-items: center; }
 .brand { font-family: var(--serif), Georgia, serif; font-size: 25px; font-weight: 400; line-height: 1.1; letter-spacing: -1.7px; }
 .doorway { display: block; margin-top: 4px; background: var(--paper); }
-.doorFill { fill: #eaf3f7; transition: fill .6s ease; }
-.doorOutline { stroke: #9ccae1; transition: stroke .6s ease; }
-.doorArrow { stroke: #75a7c1; }
-.connectionStatus { display: flex; align-items: center; gap: 6px; min-height: 18px; margin-top: 10px; font-size: 11px; color: #5c7682; letter-spacing: -.025em; }
-.connectionStatus i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #a2b5bc; }
+.doorFill { fill: var(--diagram-fill); transition: fill .6s ease; }
+.doorOutline { stroke: var(--diagram-stroke); transition: stroke .6s ease; }
+.doorArrow { stroke: var(--diagram-arrow); }
+.connectionStatus { display: flex; align-items: center; gap: 6px; min-height: 18px; margin-top: 10px; font-size: 11px; color: var(--muted); letter-spacing: -.025em; }
+.connectionStatus i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--faint); }
 .action { display: flex; justify-content: center; margin-top: 20px; padding-bottom: 8px; }
-.button { display: flex; align-items: center; justify-content: center; gap: 26px; min-width: 178px; min-height: 44px; padding: 0 18px; border: 1px solid #aecde0; border-radius: 3px; background: var(--sky); color: #294e62; font-family: inherit; font-size: 12px; letter-spacing: -.025em; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
-.button:hover:not(:disabled) { background: #b4daef; border-color: #95bbd0; }
-.button:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
-.button:disabled { cursor: wait; color: #5f859b; background: #dfedf4; }
+.button { display: flex; align-items: center; justify-content: center; gap: 26px; min-width: 178px; min-height: 44px; padding: 0 18px; border: 1px solid var(--diagram-stroke); border-radius: 3px; background: var(--button-bg); color: var(--button-ink); font-family: inherit; font-size: 12px; letter-spacing: -.025em; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.button:hover:not(:disabled) { background: var(--button-hover); border-color: var(--sky-ink); }
+.button:focus-visible { outline: 2px solid var(--focus); outline-offset: 5px; }
+.button:disabled { cursor: wait; color: var(--muted); background: var(--disabled-bg); }
 .connected .activePath { stroke-dashoffset: 0; }
-.connected .destinationSymbol { color: var(--blue); }
-.connected .doorFill { fill: #d9edf8; }
-.connected .doorOutline { stroke: var(--blue); }
-.connected .connectionStatus { color: var(--blue); }
-.connected .connectionStatus i { background: var(--blue); }
+.connected .destinationSymbol { color: var(--sky-ink); }
+.connected .doorFill { fill: var(--diagram-active-fill); }
+.connected .doorOutline { stroke: var(--sky-ink); }
+.connected .connectionStatus { color: var(--sky-ink); }
+.connected .connectionStatus i { background: var(--sky-ink); }
 .loadingDot { animation: pulse .7s ease-in-out 4 alternate; }
 @keyframes pulse { from { opacity: .25; } to { opacity: 1; } }
 @media (max-width: 650px) {

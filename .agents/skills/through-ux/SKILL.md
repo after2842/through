@@ -17,15 +17,18 @@ Do this before polishing the visual treatment. A smaller font or more compact ca
 
 ## Visual direction
 
-- Use warm ivory `#faf8f1`, sky blue `#c6e3f4`, dark ink `#242b29`, and blue ink `#417b9b`. Sky blue is the accent; mint is retired. Use dark text on pale blue where contrast requires it.
+- Use warm ivory `#faf8f1`, sky blue `#c6e3f4`, dark ink `#242b29`, and blue ink `#3e7695`. Sky blue is the accent; mint is retired. Use dark text on pale blue where contrast requires it.
+- Dark mode uses graphite `#191a20`, slightly lifted surfaces `#23252e`, muted ice blue `#b8c9e5`, and warm chalk `#eae7e2`. Keep it restrained; use shared semantic color tokens across every state and check readable contrast in both themes.
 - Retain Instrument Serif for expressive headings and DM Sans for functional copy. Give typography and space the work usually assigned to cards and decoration.
 - Prefer quiet, unboxed compositions, thin rules, and deliberate alignment. Seek a layout that fits the content instead of defaulting to a centered hero followed by interchangeable card grids.
 - Novelty must improve hierarchy or comprehension. Keep familiar controls and expected interaction behavior.
-- The landing page has its main composition and exactly one lower explanation section. Add further sections only when the user changes that scope.
+- The signed-out landing page has its main composition and exactly one lower section illustrating a concrete use case. Add further sections only when the user changes that scope.
 
 ## Content and interaction
 
 - Explain the result in plain English. Mention MCP, hooks, or vault plumbing only when the user needs that detail to make a decision.
+- Give signed-out visitors a reason to use the product; give signed-in users their actual connection state and next action. Keep the member home free of repeated marketing.
+- Custom dropdowns must retain familiar keyboard navigation, selection, focus, dismissal, and accessible labeling.
 - Keep one primary action per screen or step. Secondary actions should be visibly quieter and appear where they are needed.
 - Ask for the minimum information needed now. Prefer a short sequence over a dense form when the next step depends on the first.
 - Keep actionable controls honest: implement them, explain their limited demo effect, or remove them. Do not show decorative controls that do nothing.

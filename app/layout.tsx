@@ -11,5 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body className={`${sans.variable} ${serif.variable}`}>{children}</body></html>;
+  return <html lang="en" suppressHydrationWarning>
+    <head><script dangerouslySetInnerHTML={{ __html: `(function(){var theme;try{theme=localStorage.getItem('through.theme')}catch(e){}if(theme!=='light'&&theme!=='dark'){theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=theme})()` }} /></head>
+    <body className={`${sans.variable} ${serif.variable}`}>{children}</body>
+  </html>;
 }

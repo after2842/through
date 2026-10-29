@@ -1,0 +1,15 @@
+.field{position:relative;min-width:0}
+.label{display:block;margin-bottom:10px;color:var(--muted);font-size:12px;line-height:1.5}
+.trigger{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:48px;padding:12px 13px;border:1px solid var(--field-line);border-radius:3px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;line-height:1.5;text-align:left;cursor:pointer;transition:border-color .18s,background .18s}
+.trigger:hover:not(:disabled),.trigger[aria-expanded=true]{border-color:var(--sky-ink)}
+.trigger:focus-visible{outline:2px solid var(--focus);outline-offset:4px}
+.trigger:disabled{opacity:.6;cursor:wait}
+.trigger[aria-invalid=true]{border-color:var(--error)}
+.placeholder{color:var(--muted)}
+.chevron{flex-shrink:0;color:var(--muted);transition:transform .18s}
+.trigger[aria-expanded=true] .chevron{transform:rotate(180deg)}
+.listbox{position:absolute;z-index:10;top:calc(100% + 6px);left:0;right:0;max-height:224px;overflow-y:auto;overscroll-behavior:contain;margin:0;padding:5px;list-style:none;border:1px solid var(--field-line);border-radius:4px;background:var(--surface);box-shadow:var(--panel-shadow)}
+.option{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;padding:10px 9px;border-radius:2px;color:var(--ink);font-size:14px;line-height:1.5;cursor:pointer;user-select:none}
+.option svg{flex-shrink:0}
+.active{background:var(--sky);color:var(--button-ink)}
+@media(prefers-reduced-motion:reduce){.trigger,.chevron{transition:none}}

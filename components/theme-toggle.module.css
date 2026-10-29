@@ -1,0 +1,28 @@
+.toggle {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.toggle:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle { transition: none; }
+}

@@ -16,10 +16,15 @@ The current iteration implements the following simulated flow. It does not imple
 
 | Route or capability | Behavior | Boundary |
 |---|---|---|
-| `/` | Core product message, interactive handoff demo, sign-in entry, and exactly one lower explanation section | No fabricated support or partnership claims |
+| `/`, signed out | Core product message, handoff demo, sign-in entry, and one illustrative use case: a weekly Linear brief continuing through a login wall | Example only; no claim of a working Linear integration |
+| `/`, signed in | Personal workspace with connected accounts, ready/paused state, and the next setup or management action | Reads the same local demo state as `/accounts` |
 | `/login` | Enter an email, then an authenticator-style code; `0000` passes the demo challenge | No email is sent; no real authenticator, OAuth, or MFA verification occurs |
 | `/accounts` | Show connected demo services, add a service and choose an agent, remove a connection, pause or resume all demo access | Local state only; no plugin installation or provider permissions change |
-| Session navigation | Send signed-out users to the login flow; sign-out clears the demo session | Browser state is not authorization; direct access to static assets remains possible |
+| Session navigation | Sign-in returns to the member home; signed-out account routes go to login; sign-out clears the demo session and returns to the public home | Browser state is not authorization; direct access to static assets remains possible |
+
+Account and agent choices use custom comboboxes with keyboard navigation, type-ahead, focus management, and inline validation. The first-account action opens the connection form directly.
+
+Every route supports light and dark themes. The initial theme follows the system, and an explicit choice persists in local storage under `through.theme`. Dark mode uses graphite, muted ice blue, and warm chalk; authentication and account data remain in session storage only.
 
 Only non-secret demo data belongs in session storage. Never store real passwords, provider tokens, authenticator seeds, or recovery codes. The demo does not transmit entered account details to an authentication backend. Storage is scoped to the browser session and is not a durable account.
 
@@ -42,6 +47,14 @@ Verification completed for the October 28 frontend iteration:
 - Browser checks covered invalid email, email editing with retained input and focus, invalid code and retry, `0000` sign-in, account connection, duplicate rejection, cancellation during connection, removal, pause/resume, persistence after refresh, sign-out, and signed-out route redirection.
 - Inspected desktop (1280 px), mobile (390 px), and narrow mobile (320 px) layouts. No horizontal page overflow was observed. Product screens and error messages were English; browser error logs were empty.
 - The repository UX skill passed the skill validator, and its local documentation links resolved.
+
+The home-and-theme revision also passed the production build and browser review:
+
+- Public home and signed-in home switch correctly after login, logout, navigation, and refresh. Ready, paused, and empty connection states were exercised, including removing the last paused connection.
+- Custom dropdowns passed required-choice and duplicate feedback, pointer selection, Arrow keys, Home/End, type-ahead, Enter/Space selection, Escape/Tab dismissal, and outside-click dismissal.
+- Theme choice survived refresh and navigation. Inspected both themes on desktop and dark layouts at 320 px, including the complete popup and the single use-case section; no horizontal overflow or browser errors was observed.
+- Color calculations verified at least 4.5:1 for active text and 3:1 for diagram arrows against their actual theme backgrounds. The revised dark palette uses graphite, muted ice blue, and warm chalk.
+- The updated repository UX skill passed validation.
 
 These checks cover the frontend simulation. They do not validate real authentication, provider connections, or agent access.
 

@@ -18,7 +18,7 @@ export default function LoginForm() {
   const changedStep = useRef(false);
 
   useEffect(() => {
-    if (readDemoSession()) router.replace("/accounts/");
+    if (readDemoSession()) router.replace("/");
     return () => {
       if (timerRef.current !== null) clearTimeout(timerRef.current);
     };
@@ -58,7 +58,7 @@ export default function LoginForm() {
 
       try {
         startDemoSession(email);
-        router.replace("/accounts/");
+        router.replace("/");
       } catch {
         setBusy(false);
         setError("Allow session storage in your browser, then try again.");

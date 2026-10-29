@@ -3,6 +3,7 @@ export type AgentName = "Claude" | "Codex" | "Cursor";
 export type ServiceName = "GitHub" | "Linear" | "Notion";
 export type DemoAccount = { id: string; service: ServiceName; agent: AgentName };
 export type DemoSession = { email: string; accounts: DemoAccount[]; accessPaused: boolean };
+export const DEMO_SESSION_EVENT = "through:session-change";
 
 const STORAGE_KEY = "through.demo.v1";
 const services: ServiceName[] = ["GitHub", "Linear", "Notion"];
@@ -40,6 +41,7 @@ export function saveDemoSession(session: DemoSession): void {
     accounts: session.accounts.map(({ id, service, agent }) => ({ id, service, agent })),
     accessPaused: session.accessPaused,
   }));
+  window.dispatchEvent(new Event(DEMO_SESSION_EVENT));
 }
 
 export function startDemoSession(email: string): DemoSession {
@@ -50,4 +52,5 @@ export function startDemoSession(email: string): DemoSession {
 
 export function clearDemoSession(): void {
   window.sessionStorage.removeItem(STORAGE_KEY);
+  window.dispatchEvent(new Event(DEMO_SESSION_EVENT));
 }

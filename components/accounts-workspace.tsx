@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import SiteHeader from "@/components/site-header";
+import SelectField from "@/components/select-field";
 import {
   clearDemoSession,
   readDemoSession,
@@ -25,10 +27,12 @@ export default function AccountsWorkspace() {
   const [agent, setAgent] = useState<AgentName | "">("");
   const [connecting, setConnecting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [invalidField, setInvalidField] = useState<"service" | "agent" | null>(null);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const addButton = useRef<HTMLButtonElement>(null);
-  const serviceSelect = useRef<HTMLSelectElement>(null);
+  const serviceSelect = useRef<HTMLButtonElement>(null);
+  const agentSelect = useRef<HTMLButtonElement>(null);
   const removeButtons = useRef(new Map<string, HTMLButtonElement>());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusFrame = useRef<number | null>(null);
@@ -41,6 +45,7 @@ export default function AccountsWorkspace() {
         return;
       }
       setSession(saved);
+      setFormOpen(new URLSearchParams(window.location.search).get("connect") === "1");
     } catch {
       setLoadFailed(true);
     }
@@ -82,21 +87,36 @@ export default function AccountsWorkspace() {
     setConnecting(false);
     setFormOpen(false);
     setFormError("");
+    setInvalidField(null);
     setStatus("");
     focusAfterUpdate();
   }
 
   function connectAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!session || connecting || !service || !agent) return;
+    if (!session || connecting) return;
+    if (!service) {
+      setFormError("Choose an account to connect.");
+      setInvalidField("service");
+      serviceSelect.current?.focus();
+      return;
+    }
+    if (!agent) {
+      setFormError("Choose which agent can use this account.");
+      setInvalidField("agent");
+      agentSelect.current?.focus();
+      return;
+    }
     const chosenService = service;
     const chosenAgent = agent;
     if (session.accounts.some((account) => account.service === chosenService && account.agent === chosenAgent)) {
       setFormError(`${chosenService} is already connected for ${chosenAgent}. Choose another account or agent.`);
+      setInvalidField("service");
       serviceSelect.current?.focus();
       return;
     }
     setFormError("");
+    setInvalidField(null);
     setError("");
     setStatus(`Connecting ${chosenService} for ${chosenAgent}…`);
     setConnecting(true);
@@ -135,7 +155,7 @@ export default function AccountsWorkspace() {
     try {
       clearDemoSession();
       if (timer.current) clearTimeout(timer.current);
-      router.replace("/login/");
+      router.replace("/");
     } catch {
       setError("Couldn’t sign out. Please allow browser storage and try again.");
     }
@@ -143,7 +163,7 @@ export default function AccountsWorkspace() {
 
   return (
     <div className="page app-page">
-      <SiteHeader action={session ? <button type="button" className={styles.textButton} onClick={signOut}>Sign out</button> : undefined} />
+      <SiteHeader action={session ? <><Link href="/" className={styles.textButton}>Home</Link><button type="button" className={styles.textButton} onClick={signOut}>Sign out</button></> : undefined} />
       <main id="main" className={`app-main ${styles.main}`}>
         {!session ? (
           <div className={styles.loading} role="status">
@@ -188,8 +208,8 @@ export default function AccountsWorkspace() {
               <form className={styles.connectForm} onSubmit={connectAccount} aria-labelledby="connect-title" aria-busy={connecting}>
                 <h2 id="connect-title" className={styles.formTitle}>Connect a demo account.</h2>
                 <div className={styles.fields}>
-                  <label htmlFor="account-service">Account<select id="account-service" ref={serviceSelect} value={service} disabled={connecting} required aria-describedby={formError ? "connection-error" : undefined} aria-invalid={!!formError} onChange={(event) => { setService(event.target.value as ServiceName | ""); setFormError(""); }}><option value="" disabled>Choose an account</option>{services.map((item) => <option key={item}>{item}</option>)}</select></label>
-                  <label htmlFor="account-agent">Allow access for<select id="account-agent" value={agent} disabled={connecting} required onChange={(event) => { setAgent(event.target.value as AgentName | ""); setFormError(""); }}><option value="" disabled>Choose an agent</option>{agents.map((item) => <option key={item}>{item}</option>)}</select></label>
+                  <SelectField id="account-service" ref={serviceSelect} label="Account" value={service} options={services} placeholder="Choose an account" disabled={connecting} required invalid={invalidField === "service"} describedBy={invalidField === "service" ? "connection-error" : undefined} onChange={(value) => { setService(value as ServiceName); setFormError(""); setInvalidField(null); }} />
+                  <SelectField id="account-agent" ref={agentSelect} label="Allow access for" value={agent} options={agents} placeholder="Choose an agent" disabled={connecting} required invalid={invalidField === "agent"} describedBy={invalidField === "agent" ? "connection-error" : undefined} onChange={(value) => { setAgent(value as AgentName); setFormError(""); setInvalidField(null); }} />
                 </div>
                 {formError && <p id="connection-error" className={styles.error} role="alert">{formError}</p>}
                 <div className={styles.formActions}>
@@ -198,7 +218,7 @@ export default function AccountsWorkspace() {
                 </div>
               </form>
             ) : (
-              <div className={styles.addAction}><button ref={addButton} type="button" className={styles.primaryButton} onClick={() => { setStatus(""); setError(""); setFormError(""); setService(""); setAgent(""); setFormOpen(true); }}>Add account <span aria-hidden="true">+</span></button></div>
+              <div className={styles.addAction}><button ref={addButton} type="button" className={styles.primaryButton} onClick={() => { setStatus(""); setError(""); setFormError(""); setInvalidField(null); setService(""); setAgent(""); setFormOpen(true); }}>Add account <span aria-hidden="true">+</span></button></div>
             )}
             {error && <p className={styles.error} role="alert">{error}</p>}
             <p className={styles.status} role="status" aria-live="polite" aria-atomic="true">{status}</p>

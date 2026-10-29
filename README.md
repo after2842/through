@@ -20,7 +20,7 @@ npm run build
 
 ## Demo scope
 
-The frontend includes a landing page, an email and authenticator-style sign-in flow, and an account access workspace. Use `0000` for the demo verification code. Connections and access controls are simulated with browser session storage; no external account, agent, password manager, or authentication backend is connected. Do not enter real credentials.
+The frontend includes a public landing page with one illustrative use case, a separate signed-in home, an email and authenticator-style sign-in flow, and an account access workspace. Account choices use custom keyboard-accessible dropdowns. All screens support light and dark themes; the theme choice persists across visits. Use `0000` for the demo verification code. Connections and access controls are simulated with browser session storage; no external account, agent, password manager, or authentication backend is connected. Do not enter real credentials.
 
 The core source is in `app/`, with shared components in `components/`. Static export means a client-side route check is only demo navigation, not a security boundary.
 

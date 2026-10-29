@@ -14,7 +14,7 @@
 
 .intro {
   margin: 20px 0 0;
-  color: #626f70;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.75;
 }
@@ -36,7 +36,7 @@
   min-height: 52px;
   padding: 11px 0 13px;
   border: 0;
-  border-bottom: 1px solid #a3aca9;
+  border-bottom: 1px solid var(--field-line);
   border-radius: 0;
   outline: none;
   background: transparent;
@@ -47,22 +47,22 @@
 }
 
 .input::placeholder {
-  color: #858f8e;
+  color: var(--faint);
   opacity: 1;
 }
 
 .input:focus {
-  border-bottom: 2px solid var(--sky-ink);
+  border-bottom: 2px solid var(--focus);
   padding-bottom: 12px;
 }
 
 .input[aria-invalid="true"] {
-  border-color: #a24735;
+  border-color: var(--error);
 }
 
 .hint {
   margin: 13px 0 0;
-  color: #626f70;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.7;
 }
@@ -83,20 +83,21 @@
   gap: 20px;
   border: 1px solid transparent;
   border-radius: 4px;
-  background: var(--sky);
-  color: var(--ink);
+  background: var(--button-bg);
+  color: var(--button-ink);
   font-size: 13px;
   font-weight: 500;
   transition: background-color 150ms ease;
 }
 
 .submit:hover:not(:disabled) {
-  background: #b7dbef;
+  background: var(--button-hover);
 }
 
 .submit:disabled {
   cursor: wait;
-  color: #50646c;
+  color: var(--muted);
+  background: var(--disabled-bg);
 }
 
 .identity {
@@ -112,7 +113,7 @@
 .identity span {
   min-width: 0;
   overflow-wrap: anywhere;
-  color: #626f70;
+  color: var(--muted);
 }
 
 .identity button {
@@ -126,7 +127,7 @@
   font-size: inherit;
   text-decoration: underline;
   text-underline-offset: 4px;
-  text-decoration-color: #99b8c9;
+  text-decoration-color: var(--field-line);
 }
 
 .identity button:disabled {
@@ -141,12 +142,12 @@
 }
 
 .codeInput::placeholder {
-  color: #a6aeac;
+  color: var(--faint);
 }
 
 .error {
   margin: 14px 0 0;
-  color: #93422f;
+  color: var(--error);
   font-size: 12px;
   line-height: 1.7;
 }
