@@ -2,6 +2,8 @@
 
 Account access for AI agents, with a restrained English interface for US users and businesses. The product intent is to let an authorized agent get past a login and continue in the same browser tab.
 
+The canonical source is the private [after2842/through](https://github.com/after2842/through) repository. `origin` points to GitHub, with `main` as the default branch. GitHub Actions checks pushes and pull requests. Sites remains the static demo hosting target; publishing there is a separate step and retains the project identity in `.openai/hosting.json`.
+
 The repository now includes a Next.js frontend and a Go service backed by PostgreSQL. This is a **development sandbox**, not a production password manager: external identity, authenticator, vault, and agent/browser adapters are explicit placeholders. Use fictional emails and accounts, and the demo code `0000`. Never enter real passwords, provider tokens, or recovery codes.
 
 ## Choose a mode

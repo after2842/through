@@ -1,5 +1,7 @@
 # Working on through
 
+Manage source in the private GitHub repository `after2842/through`; `origin` is its primary remote and `main` is the default branch. Push completed changes to GitHub and check the resulting CI run. Preserve commit history and repository privacy. GitHub pushes do not publish the Sites demo; preserve `.openai/hosting.json` and use the existing Sites publishing workflow when a deployment is requested.
+
 For any frontend, UX, visual, navigation, form, or product-copy change, read and apply [the through UX skill](.agents/skills/through-ux/SKILL.md). This is the project's continuing design direction, not a one-time landing-page treatment.
 
 The product serves US and English-speaking users and businesses. Keep product UI, validation, accessibility labels, metadata, and repository documentation in English. The founder may discuss the work in Korean.
