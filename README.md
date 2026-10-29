@@ -24,7 +24,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000`. The public landing has one screenshot-like use case; signing in opens the workspace, account access controls, Settings, and Activity. Pricing is a separate page with clearly proposed USD plans; billing is not connected. Settings includes name editing, System/Light/Dark appearance, and session controls. Dropdowns support keyboard navigation. Light/dark preference persists independently of the session.
+Open `http://127.0.0.1:3000`. The public landing has one screenshot-like use case; signing in opens the workspace, account access controls, Settings, and Activity. Pricing shows every plan at $0 during preview; billing is not connected. Connections support 14 suggested platforms or an exact custom domain, a fictional-password entry flow, independent agent permissions, credential-update receipts, and searchable activity with CSV export. Settings includes name editing, System/Light/Dark appearance, and session controls. Dropdowns support keyboard navigation. Light/dark preference persists independently of the session.
 
 ## Run the Go-connected sandbox
 

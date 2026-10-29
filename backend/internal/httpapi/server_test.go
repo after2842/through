@@ -78,6 +78,9 @@ func TestStaticIsolationAndCSP(t *testing.T) {
 	if w.Code != 200 || !strings.Contains(csp, "'sha256-") || strings.Contains(strings.Split(csp, "style-src")[0], "unsafe-inline") {
 		t.Fatalf("unexpected static CSP %s status %d", csp, w.Code)
 	}
+	if !strings.Contains(csp, "img-src 'self' data: https://www.google.com https://*.gstatic.com;") || strings.Contains(csp, "img-src *") || strings.Contains(csp, "connect-src https:") {
+		t.Fatalf("favicon policy must remain limited to the browser icon provider: %s", csp)
+	}
 }
 func TestLimiterBoundedAndExpires(t *testing.T) {
 	l := &limiter{entries: map[string]bucket{}}
@@ -106,7 +109,7 @@ func TestMetricsDisabledAndPreflight(t *testing.T) {
 	r.Header.Set("Origin", "http://localhost:3000")
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, r)
-	if w.Code != 204 || w.Header().Get("Access-Control-Allow-Credentials") != "true" {
+	if w.Code != 204 || w.Header().Get("Access-Control-Allow-Credentials") != "true" || !strings.Contains(w.Header().Get("Access-Control-Allow-Methods"), "PUT") {
 		t.Fatal("preflight failed")
 	}
 }

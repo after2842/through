@@ -84,6 +84,10 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("PATCH /api/v1/me", s.auth(http.HandlerFunc(s.updateProfile)))
 	mux.Handle("POST /api/v1/accounts", s.auth(http.HandlerFunc(s.addAccount)))
 	mux.Handle("DELETE /api/v1/accounts/{id}", s.auth(http.HandlerFunc(s.removeAccount)))
+	mux.Handle("PATCH /api/v1/accounts/{id}/agents", s.auth(http.HandlerFunc(s.accountAgents)))
+	mux.Handle("PUT /api/v1/accounts/{id}/agents/{agent}", s.auth(http.HandlerFunc(s.accountAgent)))
+	mux.Handle("DELETE /api/v1/accounts/{id}/agents/{agent}", s.auth(http.HandlerFunc(s.accountAgent)))
+	mux.Handle("POST /api/v1/accounts/{id}/credential", s.auth(http.HandlerFunc(s.updateCredential)))
 	mux.Handle("PATCH /api/v1/workspace/access", s.auth(http.HandlerFunc(s.access)))
 	mux.Handle("GET /api/v1/audit", s.auth(http.HandlerFunc(s.audit)))
 	mux.Handle("POST /api/v1/handoffs", s.auth(http.HandlerFunc(s.handoff)))
@@ -237,14 +241,65 @@ func (s *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) addAccount(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Service string `json:"service"`
-		Agent   string `json:"agent"`
+		Service  string    `json:"service"`
+		Agent    *string   `json:"agent"`
+		Origin   *string   `json:"origin"`
+		Username *string   `json:"username"`
+		Agents   *[]string `json:"agents"`
 	}
 	if e := decode(w, r, &body); e != nil {
 		s.fail(w, r, e)
 		return
 	}
-	if e := s.store.AddAccount(r.Context(), principal(r), body.Service, body.Agent); e != nil {
+	var e error
+	if body.Agent != nil && body.Origin == nil && body.Username == nil && body.Agents == nil {
+		e = s.store.AddAccount(r.Context(), principal(r), body.Service, *body.Agent)
+	} else if body.Agent == nil && body.Origin != nil && body.Username != nil && body.Agents != nil {
+		e = s.store.CreateAccount(r.Context(), principal(r), core.AccountInput{Service: body.Service, Origin: *body.Origin, Username: *body.Username, Agents: *body.Agents})
+	} else {
+		e = core.Invalid("Specify a platform, HTTPS origin, username, and permitted agents.")
+	}
+	if e != nil {
+		s.fail(w, r, e)
+		return
+	}
+	s.session(w, r)
+}
+func (s *Server) accountAgents(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Agents *[]string `json:"agents"`
+	}
+	if e := decode(w, r, &body); e != nil {
+		s.fail(w, r, e)
+		return
+	}
+	if body.Agents == nil {
+		s.fail(w, r, core.Invalid("Specify permitted agents, or an empty list to remove all access."))
+		return
+	}
+	if e := s.store.SetAccountAgents(r.Context(), principal(r), r.PathValue("id"), *body.Agents); e != nil {
+		s.fail(w, r, e)
+		return
+	}
+	s.session(w, r)
+}
+func (s *Server) updateCredential(w http.ResponseWriter, r *http.Request) {
+	if r.ContentLength != 0 || len(r.TransferEncoding) != 0 {
+		s.fail(w, r, core.Invalid("This demo action does not accept a password or any request body."))
+		return
+	}
+	if e := s.store.UpdateCredential(r.Context(), principal(r), r.PathValue("id")); e != nil {
+		s.fail(w, r, e)
+		return
+	}
+	s.session(w, r)
+}
+func (s *Server) accountAgent(w http.ResponseWriter, r *http.Request) {
+	if r.ContentLength != 0 || len(r.TransferEncoding) != 0 {
+		s.fail(w, r, core.Invalid("This action does not accept a request body."))
+		return
+	}
+	if e := s.store.SetAccountAgent(r.Context(), principal(r), r.PathValue("id"), r.PathValue("agent"), r.Method == http.MethodPut); e != nil {
 		s.fail(w, r, e)
 		return
 	}
@@ -293,7 +348,7 @@ func (s *Server) audit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	data, e := s.store.Audit(r.Context(), principal(r), cursor, limit)
+	data, e := s.store.Audit(r.Context(), principal(r), cursor, limit, r.URL.Query().Get("accountId"))
 	if e != nil {
 		s.fail(w, r, e)
 		return
@@ -414,7 +469,7 @@ func (s *Server) middleware(next http.Handler) http.Handler {
 					s.fail(w, r, core.ErrForbidden)
 					return
 				}
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token, Idempotency-Key")
 				w.Header().Set("Access-Control-Max-Age", "600")
 				w.WriteHeader(204)
@@ -542,7 +597,7 @@ func (s *Server) static(w http.ResponseWriter, r *http.Request) {
 				scripts += " 'sha256-" + base64.StdEncoding.EncodeToString(digest[:]) + "'"
 			}
 		}
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src "+scripts+"; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src "+scripts+"; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google.com https://*.gstatic.com; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 		w.Header().Set("Cache-Control", "no-cache")
 		http.ServeContent(w, r, name, info.ModTime(), strings.NewReader(string(data)))
 		return

@@ -5,15 +5,25 @@
 .primaryAction { display: inline-flex; align-items: center; justify-content: space-between; gap: 45px; min-height: 48px; margin-top: 31px; padding: 13px 18px; border: 1px solid transparent; border-radius: 3px; background: var(--button-bg); color: var(--button-ink); font-size: 13px; line-height: 1.6; transition: background 150ms ease; }
 .primaryAction:hover { background: var(--button-hover); }
 .primaryAction > span { font-size: 17px; }
+.actionNote { max-width: 260px; margin: 13px 0 0; color: var(--muted); font-size: 10px; line-height: 1.75; }
 .plans { min-width: 0; margin-top: 8px; }
+.previewLabel { display: flex; align-items: center; gap: 8px; margin: 0 0 18px; color: var(--sky-ink); font-size: 9px; letter-spacing: .9px; line-height: 1.6; }
+.previewLabel > span { width: 4px; height: 4px; background: var(--sky-ink); border-radius: 50%; }
 .planList { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .plan { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 26px; padding: 29px 0 30px; border-bottom: 1px solid var(--line); }
 .planIdentity { min-width: 0; }
 .planName { margin: 3px 0 0; font-size: 16px; font-weight: 500; line-height: 1.5; }
 .audience { margin: 9px 0 0; max-width: 240px; color: var(--muted); font-size: 12px; line-height: 1.75; }
 .price { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; margin: 0; text-align: right; }
+.priceNumbers { display: flex; align-items: baseline; justify-content: flex-end; gap: 12px; }
+.previousPrice { color: var(--muted); font-size: 16px; font-weight: 400; text-decoration-thickness: 1px; text-decoration-color: var(--muted); }
 .amount { font-family: var(--serif); font-size: 42px; font-weight: 400; line-height: 1; letter-spacing: -.03em; }
 .interval { color: var(--muted); font-size: 11px; line-height: 1.6; white-space: nowrap; }
+.included { padding: 25px 0 0; }
+.included p { margin: 0; color: var(--ink); font-size: 11px; font-weight: 500; }
+.included ul { display: flex; flex-wrap: wrap; gap: 10px 19px; margin: 12px 0 0; padding: 0; list-style: none; }
+.included li { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; line-height: 1.75; }
+.included li::before { content: "✓"; color: var(--sky-ink); }
 .note { margin: 20px 0 0; color: var(--muted); font-size: 11px; line-height: 1.75; }
 .footer { justify-content: space-between; gap: 24px; }
 .homeLink { display: inline-flex; align-items: center; min-height: 44px; flex-shrink: 0; font-size: 12px; }
@@ -41,6 +51,8 @@
   .planName { font-size: 15px; }
   .amount { font-size: 38px; }
   .interval { font-size: 10px; }
+  .priceNumbers { gap: 8px; }
+  .previousPrice { font-size: 14px; }
   .footer { flex-direction: column; align-items: flex-start; gap: 0; text-align: left; }
   .environment { padding-top: 0; text-align: left; }
 }

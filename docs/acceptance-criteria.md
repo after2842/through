@@ -1,10 +1,12 @@
 # Acceptance criteria and evidence
 
-Release target: credential-free Go development service and the through frontend. Reviewed October 28, 2026, America/Los_Angeles.
+Release target: credential-free Go development service and the through frontend. Original review October 28, 2026; connection-management evidence added October 29, 2026, America/Los_Angeles.
 
 Use **Verified** only when the named check has evidence. **Implemented, unverified** means code exists without completed verification. **Placeholder** means intentionally simulated external behavior. **Open** is missing or unresolved. A passing unit test does not substitute for an end-to-end provider test or an operational recovery exercise.
 
 ## Development release checks
+
+D01–D20 preserve the evidence from the first sandbox iteration. Later sections record settings, GitHub, and connection-management changes; earlier browser checks do not verify newly added screens.
 
 | ID | Check | Pass condition | Status / evidence |
 |---|---|---|---|
@@ -99,3 +101,47 @@ Verification: both frontend modes built, TypeScript passed, and real PostgreSQL 
 The complete Git history was pushed to the private [after2842/through](https://github.com/after2842/through) repository. GitHub is now `origin`, and local `main` tracks `origin/main`. Repository privacy, matching commit IDs, and a clean working tree were verified. The existing Sites project identity was preserved.
 
 Hosted CI was attempted on commit `ba7d0bb`. Both the [initial push run](https://github.com/after2842/through/actions/runs/40837236511) and the [manual dispatch](https://github.com/after2842/through/actions/runs/40837370479) ended with `startup_failure` before any jobs were created. The API returned no check runs or logs with a specific cause. Actions is enabled and allows all actions; local `actionlint v1.7.12` passed without diagnostics. The cause remains unconfirmed, and hosted CI has not passed. These attempts do not change the earlier local validation evidence or production gates.
+
+## October 29 update: connection management
+
+Implemented new setup and detail pages, 14 suggested platforms plus validated custom domains, per-connection usernames and timestamps, multiple agent permissions, demo credential updates, deletion, account-scoped activity, search/filter controls, and CSV export of loaded activity. Personal, Team, and Enterprise now all show $0 during preview; the previous $19/$39 draft prices are crossed out, not active charges. Billing and plan-specific entitlements remain absent. The public demo depicts permission check, masked entry, sign-in, resumed work, and completion, with pause/replay and reduced-motion stepping.
+
+The connection/backend reviewer inspected `connection-form.tsx`, `connection-detail.tsx`, `accounts-workspace.tsx`, `activity-feed.tsx`, `platform-icon.tsx`, `lib/client.ts`, `lib/demo-session.ts`, and `lib/platforms.ts` against the Go API. This was source review, not browser execution. It verified the intended boundary: fictional password values are discarded before metadata submission; no password is included in the connection input allowlist; credential updates have no request body; service requests never fall back to demo storage. The icon URL carries a validated hostname only, with a no-referrer policy. The domain is disclosed to Google's icon service; no password or username is used in that request.
+
+| ID | Check | Evidence from this update |
+|---|---|---|
+| C01 | Exact custom origin and bounded account metadata | **Verified in unit/HTTP tests:** HTTPS normalization and catalog binding; reject ports, credentials, paths, query/fragment, IP/local/special-use names, malformed labels, oversized fields, duplicate agents, missing username, and password fields |
+| C02 | Connection DTO and duplicate identity | **Verified against PostgreSQL:** normalized origin/username, ordered permission list, compatibility `agent`, creation/update timestamps, version 1 metadata; duplicate workspace/origin/username rejected independently of agent selection |
+| C03 | Current permission and tenant enforcement | **Verified against PostgreSQL:** member/viewer changes denied; foreign account changes/logs return 404; credential and permission mutations on deleted accounts fail; every mutation uses current session/role and workspace lock |
+| C04 | Revocation overrides handoff replay | **Verified against PostgreSQL:** removing one agent rejects both new attempts and an earlier successful key; other agents continue; removing every agent returns an empty grant list and prevents reuse; a handoff waiting on policy change observes committed revocation |
+| C05 | Individual changes preserve other current permissions | **Verified against PostgreSQL with race detection:** two sessions concurrently remove different agents and both remain revoked; repeated allow/revoke is a no-op with no duplicate audit. Review replaced stale whole-list UI updates with atomic single-agent endpoints |
+| C06 | Simulated credential updates | **Verified against PostgreSQL/HTTP:** version increments and update time advances without changing creation time; no request body is accepted, including `{}` and password fields. No vault, password reset, or provider call is implemented |
+| C07 | Transactional scoped history | **Verified against PostgreSQL:** filter and cursor remain account/workspace scoped, deleted-account history remains readable, unknown/foreign IDs are rejected, permission/credential/delete changes roll back if audit insertion fails |
+| C08 | Migration preservation | **Verified against PostgreSQL:** migrations 001–003 with two old same-origin/different-agent accounts upgrade through 004 without merging IDs or altering historical audit; re-running migrations succeeds; both migrated grants can be removed without uniqueness conflict |
+| C09 | Request and icon policy | **Verified in HTTP tests:** CSRF required for new changes, unknown fields and bodies rejected, PUT included in allowed preflight methods, image CSP restricted to self/data and Google/gstatic providers. Source review found no server URL fetch |
+| C10 | Revised UI | **Verified in browser:** static demo and production service build; four-step setup and confirmation, custom-domain rejection/acceptance, long account wrapping, password-update receipt, individual remove/allow, zero-access disabled sign-in, deletion receipt, scoped logs, filtered CSV download, pause/resume, outage/retry, pricing, completed task animation, keyboard platform selection, light/dark layouts, and 320px overflow checks. Publication is a separate operation. |
+
+Commands executed by the backend reviewer from `backend/`:
+
+```sh
+THROUGH_TEST_DATABASE_URL='postgres://through_test@127.0.0.1:55439/through_test?sslmode=disable' go test -race -count=1 ./...
+go vet ./...
+go test ./internal/httpapi
+CGO_ENABLED=0 go build -trimpath -o /Users/samuelchoi/Documents/Codex/2026-10-28/ai/work/through-connection-service ./cmd/through
+```
+
+All four checks passed. The full suite used the dedicated local PostgreSQL 14.20 fixture, with database tests executed rather than skipped. After adding PUT to the CORS preflight list, the HTTP package test and static build were rerun and passed. The module selects Go 1.27.3. No dependency versions changed in this update; previous vulnerability-scan evidence remains historical, and a new scan is not claimed here.
+
+The review identified the stale permission-list race before release. The corrected endpoints are `PUT /api/v1/accounts/{id}/agents/{agent}` and `DELETE` of the same path, both without a body, with current permissions read under the transaction lock. The legacy full-set PATCH stays available but is not used for individual UI controls. The database test `TestConcurrentSingleAgentRevocationsPreserveBothChanges` exercises the regression directly.
+
+Migration 004 adds a required origin column, so its matching service must be deployed together; an older service cannot continue using its former account-insert shape. Earlier audit records remain immutable and have no account ID. Current account-scoped activity therefore excludes those earlier records while workspace activity retains them. Retention is unchanged: service history has no implemented purge policy, and browser demo history is tab-local, capped at 500 events, and cleared at sign-out.
+
+These results approve the named backend sandbox changes only. Real identity/MFA, credential enrollment/storage, vault access, browser control, agent/device enrollment, enterprise federation, managed operations, and all pilot gates remain open or placeholder. A metadata version counter is not evidence that a password was saved. Docker execution and a successful hosted CI run remain unverified. Browser evidence is recorded below; publication is a separate operation.
+
+### Frontend and end-to-end verification
+
+`npm run typecheck`, `npm run build:service`, `npm run build:demo`, `git diff --check`, and `npm audit --omit=dev` passed; the npm audit reported zero vulnerabilities. No dependency changes were needed.
+
+Browser QA used fictional accounts in the local static demo and the optimized service export served by Go with a dedicated local PostgreSQL database. The service flow created a GitHub connection, removed one of two agents, reloaded to verify persistence, completed a permitted simulated sign-in, updated credential metadata to version 2, and allowed another agent. Pausing the workspace disabled the sign-in control; resuming restored access. Stopping the Go process produced a visible retryable activity error without demo fallback; restarting it and choosing Try again restored the log.
+
+Static-demo QA exercised keyboard typeahead in the icon picker, Linear with multiple agents, the review consent and animated receipt, a custom domain, rejection of a loopback HTTP URL, a 213-character username at 320px, the last-agent removal state, and deletion without removing the other fixture connection. The filtered CSV download contained only the selected sign-in event, including its connection ID. Dark/light desktop and 320px form, detail, modal, activity, and pricing screens were inspected. Observed narrow screens had matching 320px client/scroll widths. Reduced-motion behavior was source-reviewed, including the success checkmark's static visible stroke; operating-system reduced-motion emulation was not exercised.

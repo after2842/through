@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import SiteHeader from "./site-header";
+import WorkspaceShell from "./workspace-shell";
 import SelectField from "./select-field";
-import EnvironmentNote from "./environment-note";
-import { APIError, errorMessage, getSession, updateProfile, signOut, signOutOtherSessions, type WorkspaceSession } from "@/lib/client";
+import { APIError, canManage, errorMessage, getSession, updateProfile, signOut, signOutOtherSessions, type WorkspaceSession } from "@/lib/client";
 import { useThemePreference, type ThemePreference } from "@/lib/theme";
 import styles from "./user-settings.module.css";
 
@@ -77,8 +76,7 @@ export default function UserSettings() {
     finally { finish(); }
   }
 
-  return <div className="page app-page">
-    <SiteHeader action={<><Link href="/accounts/" className="quiet-link">Accounts</Link><Link href="/pricing/" className="quiet-link">Pricing</Link></>} />
+  return <WorkspaceShell active="settings" email={session?.email} canViewActivity={session ? canManage(session) : false}>
     <main id="main" className={`app-main ${styles.main}`}>
       <div className={styles.heading}><h1>Your settings.</h1></div>
       {loading || loadError || !session ? <div className={styles.loading} role={loadError ? "alert" : "status"}>
@@ -106,7 +104,7 @@ export default function UserSettings() {
         </section>
         <section className={styles.section} aria-labelledby="plan-heading">
           <h2 id="plan-heading">Plan</h2>
-          <div className={`${styles.content} ${styles.inline}`}><div><p className={styles.value}>Free preview</p><p className={styles.hint}>No subscription or payment method.</p></div><Link href="/pricing/" className="quiet-link">View plans <span aria-hidden="true">↗</span></Link></div>
+          <div className={`${styles.content} ${styles.inline}`}><div><p className={styles.value}>Personal · $0 / month</p><p className={styles.hint}>Free during preview. No payment method or automatic charges.</p></div><Link href="/pricing/" className="quiet-link">View plans <span aria-hidden="true">↗</span></Link></div>
         </section>
         <section className={styles.section} aria-labelledby="security-heading">
           <h2 id="security-heading">Sign-in</h2>
@@ -122,6 +120,5 @@ export default function UserSettings() {
         </section>
       </>}
     </main>
-    <footer className="app-footer"><EnvironmentNote /></footer>
-  </div>;
+  </WorkspaceShell>;
 }

@@ -29,7 +29,7 @@ var (
 	ErrChallengeExpired   = &Error{"challenge_expired", "This code has expired or was already used. Start again to request a new code.", 401}
 	ErrChallengeExhausted = &Error{"challenge_exhausted", "Too many incorrect codes. Start again to request a new code.", 401}
 	ErrNotFound           = &Error{"not_found", "That resource was not found.", 404}
-	ErrDuplicate          = &Error{"duplicate_account", "That account is already connected for this agent.", 409}
+	ErrDuplicate          = &Error{"duplicate_account", "That account is already connected. Manage its agent permissions from the connection.", 409}
 	ErrPaused             = &Error{"access_paused", "Account access is paused.", 403}
 	ErrConflict           = &Error{"idempotency_conflict", "This request key was already used for a different operation.", 409}
 	ErrRateLimit          = &Error{"rate_limited", "Too many attempts. Try again later.", 429}
@@ -68,11 +68,9 @@ func DisplayName(value string) (string, error) {
 	return value, nil
 }
 
-var ServiceOrigins = map[string]string{"GitHub": "https://github.com", "Linear": "https://linear.app", "Notion": "https://www.notion.so"}
-
 func ValidAccount(service, agent string) bool {
 	_, ok := ServiceOrigins[service]
-	return ok && (agent == "Claude" || agent == "Codex" || agent == "Cursor")
+	return ok && ValidAgent(agent)
 }
 func CanWrite(role string) bool { return role == "owner" || role == "admin" }
 
@@ -88,10 +86,16 @@ type Workspace struct {
 	AccessPaused bool   `json:"accessPaused"`
 }
 type Account struct {
-	ID        string `json:"id"`
-	Service   string `json:"service"`
-	Agent     string `json:"agent"`
-	Simulated bool   `json:"simulated"`
+	ID                  string    `json:"id"`
+	Service             string    `json:"service"`
+	Agent               string    `json:"agent"`
+	Agents              []string  `json:"agents"`
+	Origin              string    `json:"origin"`
+	Username            string    `json:"username"`
+	CreatedAt           time.Time `json:"createdAt"`
+	CredentialUpdatedAt time.Time `json:"credentialUpdatedAt"`
+	CredentialVersion   int       `json:"credentialVersion"`
+	Simulated           bool      `json:"simulated"`
 }
 type Session struct {
 	User      User      `json:"user"`
@@ -117,6 +121,7 @@ type AuditEvent struct {
 	ActorEmail string    `json:"actorEmail"`
 	OccurredAt time.Time `json:"occurredAt"`
 	Target     string    `json:"target,omitempty"`
+	AccountID  string    `json:"accountId,omitempty"`
 }
 type AuditPage struct {
 	Events     []AuditEvent `json:"events"`
@@ -143,7 +148,7 @@ type Handoff struct {
 }
 
 func (i HandoffInput) Validate() error {
-	if i.AccountID == "" || len(i.AccountID) > 64 || len(i.TargetOrigin) > 255 || len(i.BrowserSessionID) < 1 || len(i.BrowserSessionID) > 128 || len(i.TabID) < 1 || len(i.TabID) > 128 {
+	if i.AccountID == "" || len(i.AccountID) > 64 || len(i.TargetOrigin) > 261 || len(i.BrowserSessionID) < 1 || len(i.BrowserSessionID) > 128 || len(i.TabID) < 1 || len(i.TabID) > 128 {
 		return Invalid("Provide a connected account and a bounded browser session and tab ID.")
 	}
 	for _, v := range []string{i.BrowserSessionID, i.TabID} {
@@ -166,9 +171,13 @@ type Store interface {
 	LogoutOthers(context.Context, *Principal) (int64, error)
 	UpdateProfile(context.Context, *Principal, string) error
 	AddAccount(context.Context, *Principal, string, string) error
+	CreateAccount(context.Context, *Principal, AccountInput) error
+	SetAccountAgents(context.Context, *Principal, string, []string) error
+	SetAccountAgent(context.Context, *Principal, string, string, bool) error
+	UpdateCredential(context.Context, *Principal, string) error
 	RemoveAccount(context.Context, *Principal, string) error
 	SetPaused(context.Context, *Principal, bool) error
-	Audit(context.Context, *Principal, int64, int) (*AuditPage, error)
+	Audit(context.Context, *Principal, int64, int, ...string) (*AuditPage, error)
 	CreateHandoff(context.Context, *Principal, HandoffInput, string) (*Handoff, bool, error)
 	Handoff(context.Context, *Principal, string) (*Handoff, error)
 }

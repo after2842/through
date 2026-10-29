@@ -16,7 +16,7 @@ export default function Home() {
             <p>Your agent signs in with your connected accounts,<br className="desktop-break" /> then gets back to work in the same browser.</p>
           </div>
           <div className="experience"><AgentDemo /></div>
-          <a className="section-cue" href="#use-case">One everyday example <span aria-hidden="true">↓</span></a>
+          <a className="section-cue" href="#use-case">Your account. Your permission. <span aria-hidden="true">↓</span></a>
         </section>
         <UseCase />
       </main>

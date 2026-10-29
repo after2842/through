@@ -14,8 +14,9 @@
 .inactive { color: var(--muted); }
 .inactive > span { border: 1px solid currentColor; background: transparent; }
 .accounts { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.account { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; min-height: 62px; padding: 20px 0; border-bottom: 1px solid var(--line); }
-.service { font-size: 15px; font-weight: 500; line-height: 1.5; }
+.account { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 62px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.account:hover { background: var(--diagram-fill); }
+.service { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
 .agent { color: var(--muted); font-size: 12px; line-height: 1.5; }
 .error { margin: 18px 0 0; max-width: 350px; color: var(--error); font-size: 13px; line-height: 1.7; }
 .loading { color: var(--muted); font-size: 14px; line-height: 1.7; }

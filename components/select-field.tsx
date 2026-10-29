@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { forwardRef, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import styles from "./select-field.module.css";
 
 type SelectFieldProps = {
@@ -14,10 +14,11 @@ type SelectFieldProps = {
   required?: boolean;
   invalid?: boolean;
   describedBy?: string;
+  renderOption?: (option: string) => ReactNode;
 };
 
 const SelectField = forwardRef<HTMLButtonElement, SelectFieldProps>(function SelectField(
-  { id, label, value, options, placeholder, onChange, disabled = false, required = false, invalid = false, describedBy },
+  { id, label, value, options, placeholder, onChange, disabled = false, required = false, invalid = false, describedBy, renderOption },
   forwardedRef,
 ) {
   const [open, setOpen] = useState(false);
@@ -134,7 +135,7 @@ const SelectField = forwardRef<HTMLButtonElement, SelectFieldProps>(function Sel
         onClick={() => { if (open) setOpen(false); else openList(); }}
         onKeyDown={handleKeyDown}
       >
-        <span id={`${id}-value`}>{value || placeholder}</span>
+        <span id={`${id}-value`}>{value ? (renderOption?.(value) ?? value) : placeholder}</span>
         <svg className={styles.chevron} width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
       {open && (
@@ -150,7 +151,7 @@ const SelectField = forwardRef<HTMLButtonElement, SelectFieldProps>(function Sel
               onPointerDown={(event) => event.preventDefault()}
               onClick={() => select(index)}
             >
-              <span>{option}</span>
+              <span>{renderOption?.(option) ?? option}</span>
               {value === option && <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>}
             </li>
           ))}

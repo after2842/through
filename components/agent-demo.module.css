@@ -1,82 +1,85 @@
-.demo {
-  width: 100%;
-  color: var(--ink);
-}
-.workflow {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 180px 1fr;
-  min-height: 175px;
-  isolation: isolate;
-}
-.flowLine {
-  position: absolute;
-  z-index: -1;
-  left: 17%;
-  top: 78px;
-  width: 66%;
-  height: 2px;
-  overflow: visible;
-}
-.basePath { stroke: var(--line); stroke-width: 1; }
-.activePath {
-  stroke: var(--sky-ink);
-  stroke-width: 1.1;
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  transition: stroke-dashoffset 1s ease;
-}
-.station {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 58px;
-}
-.agentSymbol, .destinationSymbol {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 40px;
-  background: var(--paper);
-  color: var(--muted);
-}
-.destinationSymbol { color: var(--faint); transition: color .5s ease; }
-.stationText { display: flex; align-items: baseline; gap: 9px; margin-top: 23px; white-space: nowrap; }
-.stationText strong { font-size: 15px; font-weight: 450; letter-spacing: -.025em; }
-.stationText span { font-size: 11px; color: var(--muted); letter-spacing: -.025em; }
-.threshold { display: flex; flex-direction: column; align-items: center; }
-.brand { font-family: var(--serif), Georgia, serif; font-size: 25px; font-weight: 400; line-height: 1.1; letter-spacing: -1.7px; }
-.doorway { display: block; margin-top: 4px; background: var(--paper); }
-.doorFill { fill: var(--diagram-fill); transition: fill .6s ease; }
-.doorOutline { stroke: var(--diagram-stroke); transition: stroke .6s ease; }
-.doorArrow { stroke: var(--diagram-arrow); }
-.connectionStatus { display: flex; align-items: center; gap: 6px; min-height: 18px; margin-top: 10px; font-size: 11px; color: var(--muted); letter-spacing: -.025em; }
-.connectionStatus i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: var(--faint); }
-.action { display: flex; justify-content: center; margin-top: 20px; padding-bottom: 8px; }
-.button { display: flex; align-items: center; justify-content: center; gap: 26px; min-width: 178px; min-height: 44px; padding: 0 18px; border: 1px solid var(--diagram-stroke); border-radius: 3px; background: var(--button-bg); color: var(--button-ink); font-family: inherit; font-size: 12px; letter-spacing: -.025em; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
-.button:hover:not(:disabled) { background: var(--button-hover); border-color: var(--sky-ink); }
+.demo { width: 100%; color: var(--ink); }
+.scene { display: grid; grid-template-columns: minmax(0, .83fr) minmax(0, 1.17fr); gap: clamp(35px, 6vw, 88px); align-items: stretch; }
+.conversation { display: flex; flex-direction: column; align-items: flex-start; padding: 15px 0 7px; min-width: 0; }
+.label { margin: 0 0 12px; color: var(--muted); font-size: 9px; letter-spacing: 1.1px; line-height: 1.6; }
+.request { max-width: 320px; margin: 0; font-size: 19px; font-weight: 400; letter-spacing: -.4px; line-height: 1.5; }
+.agentReply { display: flex; gap: 11px; margin-top: 29px; min-height: 77px; }
+.agentMark { display: grid; place-items: center; width: 21px; height: 24px; flex-shrink: 0; color: var(--sky-ink); font-size: 21px; }
+.replyTitle { margin: 2px 0 0; font-size: 12px; font-weight: 500; line-height: 1.65; }
+.replyDetail { max-width: 285px; margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.75; }
+.complete .replyTitle { color: var(--sky-ink); }
+.complete .agentMark { font-size: 16px; }
+.controls { display: flex; align-items: center; gap: 19px; margin-top: auto; padding-top: 23px; }
+.button { display: inline-flex; align-items: center; justify-content: space-between; gap: 30px; min-width: 162px; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 3px; background: var(--button-bg); color: var(--button-ink); font-family: inherit; font-size: 12px; transition: background 150ms; }
+.button:hover { background: var(--button-hover); }
 .button:focus-visible { outline: 2px solid var(--focus); outline-offset: 5px; }
-.button:disabled { cursor: wait; color: var(--muted); background: var(--disabled-bg); }
-.connected .activePath { stroke-dashoffset: 0; }
-.connected .destinationSymbol { color: var(--sky-ink); }
-.connected .doorFill { fill: var(--diagram-active-fill); }
-.connected .doorOutline { stroke: var(--sky-ink); }
-.connected .connectionStatus { color: var(--sky-ink); }
-.connected .connectionStatus i { background: var(--sky-ink); }
-.loadingDot { animation: pulse .7s ease-in-out 4 alternate; }
-@keyframes pulse { from { opacity: .25; } to { opacity: 1; } }
+.pauseIcon { width: 15px; font-size: 16px; line-height: 1; }
+.step { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.browser { min-width: 0; overflow: hidden; border: 1px solid var(--field-line); border-radius: 8px; background: var(--surface); box-shadow: var(--panel-shadow); }
+.chrome { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 35px; padding: 0 13px; border-bottom: 1px solid var(--line); background: var(--paper); }
+.windowDots { display: inline-flex; gap: 4px; }
+.windowDots i { width: 5px; height: 5px; border: 1px solid var(--field-line); border-radius: 50%; }
+.address { overflow: hidden; color: var(--muted); font-size: 9px; white-space: nowrap; text-overflow: ellipsis; }
+.address > span { padding-right: 4px; font-size: 13px; }
+.tabLabel { flex-shrink: 0; color: var(--muted); font-size: 8px; }
+.screen { height: 286px; }
+.login { width: min(100%, 328px); padding: 22px 24px 16px; margin: auto; }
+.loginHeading { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.workspaceMark { display: grid; place-items: center; width: 27px; height: 27px; flex-shrink: 0; border-radius: 5px; background: var(--ink); color: var(--surface); font-size: 14px; font-weight: 500; }
+.loginHeading strong { display: block; font-size: 12px; font-weight: 500; letter-spacing: -.2px; }
+.loginHeading div > span { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+.field { margin-top: 10px; }
+.field > span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 9px; }
+.input { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 33px; padding: 0 10px; border: 1px solid var(--line); border-radius: 3px; font-size: 10px; }
+.filling { border-color: var(--diagram-stroke); background: var(--diagram-fill); }
+.password { font-size: 12px; letter-spacing: 1.5px; }
+.fillSource { color: var(--sky-ink); font-family: var(--serif); font-size: 15px; letter-spacing: -.6px; }
+.fillSource > span { margin-left: 3px; font-family: var(--sans); font-size: 9px; }
+.signIn { display: flex; align-items: center; justify-content: space-between; min-height: 33px; margin-top: 12px; padding: 0 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper); font-size: 10px; }
+.signing { border-color: var(--diagram-stroke); background: var(--button-bg); color: var(--button-ink); }
+.permission { margin: 12px 0 0; color: var(--muted); font-size: 8px; line-height: 1.65; text-align: center; }
+.permissionFound { color: var(--sky-ink); }
+.workspace { padding: 18px 25px; }
+.workspaceHeading { display: flex; align-items: center; gap: 8px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+.workspaceHeading .workspaceMark { width: 22px; height: 22px; font-size: 11px; }
+.workspaceHeading strong { font-size: 11px; font-weight: 500; }
+.signedIn { margin-left: auto; color: var(--sky-ink); font-size: 9px; }
+.projectHeading { display: flex; align-items: baseline; gap: 10px; margin: 20px 0 8px; }
+.projectHeading h3 { margin: 0; font-size: 15px; font-weight: 500; letter-spacing: -.3px; }
+.projectHeading > span { color: var(--muted); font-size: 9px; }
+.projectRow { display: flex; align-items: center; gap: 9px; min-height: 53px; border-bottom: 1px solid var(--line); }
+.projectRow > span:first-child { width: 15px; flex-shrink: 0; color: var(--sky-ink); font-size: 13px; text-align: center; }
+.projectRow strong { display: block; font-size: 10px; font-weight: 500; }
+.projectRow div > span { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; line-height: 1.4; }
+.projectTag { margin-left: auto; padding-left: 8px; color: var(--muted); font-size: 8px; white-space: nowrap; }
+.result { display: flex; align-items: center; gap: 7px; margin-top: 18px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.resultReady { color: var(--sky-ink); }
+.caption { margin: 14px 0 0; color: var(--muted); font-size: 9px; line-height: 1.6; text-align: right; }
+@media (max-width: 900px) {
+  .scene { gap: 32px; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+  .request { font-size: 17px; }
+  .projectTag { display: none; }
+  .workspace { padding-inline: 20px; }
+}
 @media (max-width: 650px) {
-  .workflow { grid-template-columns: 1fr 100px 1fr; min-height: 175px; }
-  .flowLine { left: 14%; width: 72%; }
-  .stationText { flex-direction: column; align-items: center; gap: 5px; margin-top: 22px; }
-  .stationText strong { font-size: 13px; }
-  .stationText span { font-size: 11px; }
-  .brand { font-size: 23px; }
-  .connectionStatus { font-size: 11px; gap: 5px; }
-  .action { margin-top: 20px; }
-  .button { min-height: 44px; font-size: 12px; }
+  .scene { grid-template-columns: 1fr; gap: 24px; }
+  .conversation { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; padding: 0; }
+  .conversation > div:first-child { grid-column: 1 / -1; }
+  .label { margin-bottom: 8px; }
+  .request { max-width: 350px; font-size: 17px; }
+  .agentReply { grid-column: 1 / -1; margin-top: 20px; min-height: 65px; }
+  .replyDetail { max-width: none; }
+  .controls { grid-column: 1 / -1; justify-content: space-between; width: 100%; margin-top: 0; padding-top: 16px; }
+  .screen { height: 276px; }
+  .login { padding-top: 19px; }
+  .caption { text-align: left; }
+  .projectTag { display: block; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .activePath, .destinationSymbol, .doorFill, .doorOutline, .button { transition: none; }
-  .loadingDot { animation: none; }
+@media (max-width: 360px) {
+  .windowDots { display: none; }
+  .chrome { gap: 5px; padding-inline: 10px; }
+  .login { padding-inline: 19px; }
+  .workspace { padding-inline: 17px; }
+  .projectTag { display: none; }
 }
+@media (prefers-reduced-motion: reduce) { .button { transition: none; } }

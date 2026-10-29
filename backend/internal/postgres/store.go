@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"through/backend/internal/core"
 )
@@ -147,14 +146,14 @@ func (s *Store) Session(ctx context.Context, p *core.Principal) (*core.Session, 
 	if e != nil {
 		return nil, e
 	}
-	rows, e := s.Pool.Query(ctx, "SELECT id,service,agent,simulated FROM accounts WHERE workspace_id=$1 AND revoked_at IS NULL ORDER BY created_at,id", p.WorkspaceID)
+	rows, e := s.Pool.Query(ctx, `SELECT a.id,a.service,a.agent,a.simulated,a.origin,a.username,a.created_at,a.credential_updated_at,a.credential_version,ARRAY(SELECT agent FROM account_agents g WHERE g.workspace_id=a.workspace_id AND g.account_id=a.id ORDER BY position) FROM accounts a WHERE a.workspace_id=$1 AND a.revoked_at IS NULL ORDER BY a.created_at,a.id`, p.WorkspaceID)
 	if e != nil {
 		return nil, e
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var a core.Account
-		if e = rows.Scan(&a.ID, &a.Service, &a.Agent, &a.Simulated); e != nil {
+		if e = rows.Scan(&a.ID, &a.Service, &a.Agent, &a.Simulated, &a.Origin, &a.Username, &a.CreatedAt, &a.CredentialUpdatedAt, &a.CredentialVersion, &a.Agents); e != nil {
 			return nil, e
 		}
 		result.Accounts = append(result.Accounts, a)
@@ -261,34 +260,20 @@ func (s *Store) UpdateProfile(ctx context.Context, p *core.Principal, value stri
 		return audit(ctx, tx, p, "profile.updated", "")
 	})
 }
-func (s *Store) AddAccount(ctx context.Context, p *core.Principal, service, agent string) error {
-	if !core.ValidAccount(service, agent) {
-		return core.Invalid("Choose a supported account and agent.")
-	}
-	return s.mutate(ctx, p, true, func(tx pgx.Tx) error {
-		id := core.NewID()
-		_, e := tx.Exec(ctx, "INSERT INTO accounts(id,workspace_id,service,agent) VALUES($1,$2,$3,$4)", id, p.WorkspaceID, service, agent)
-		var pe *pgconn.PgError
-		if errors.As(e, &pe) && pe.Code == "23505" {
-			return core.ErrDuplicate
-		}
-		if e != nil {
-			return e
-		}
-		return audit(ctx, tx, p, "account.connected", service+" / "+agent)
-	})
-}
 func (s *Store) RemoveAccount(ctx context.Context, p *core.Principal, id string) error {
 	return s.mutate(ctx, p, true, func(tx pgx.Tx) error {
-		var service, agent string
-		e := tx.QueryRow(ctx, "UPDATE accounts SET revoked_at=now() WHERE workspace_id=$1 AND id=$2 AND revoked_at IS NULL RETURNING service,agent", p.WorkspaceID, id).Scan(&service, &agent)
+		var service string
+		e := tx.QueryRow(ctx, "UPDATE accounts SET revoked_at=now() WHERE workspace_id=$1 AND id=$2 AND revoked_at IS NULL RETURNING service", p.WorkspaceID, id).Scan(&service)
 		if errors.Is(e, pgx.ErrNoRows) {
 			return core.ErrNotFound
 		}
 		if e != nil {
 			return e
 		}
-		return audit(ctx, tx, p, "account.revoked", service+" / "+agent)
+		if _, e = tx.Exec(ctx, "DELETE FROM account_agents WHERE workspace_id=$1 AND account_id=$2", p.WorkspaceID, id); e != nil {
+			return e
+		}
+		return auditAccount(ctx, tx, p, "account.revoked", service, id)
 	})
 }
 func (s *Store) SetPaused(ctx context.Context, p *core.Principal, paused bool) error {
@@ -307,19 +292,39 @@ func (s *Store) SetPaused(ctx context.Context, p *core.Principal, paused bool) e
 		return audit(ctx, tx, p, action, "")
 	})
 }
-func (s *Store) Audit(ctx context.Context, p *core.Principal, cursor int64, limit int) (*core.AuditPage, error) {
+func (s *Store) Audit(ctx context.Context, p *core.Principal, cursor int64, limit int, accountIDs ...string) (*core.AuditPage, error) {
+	if cursor < 0 || limit < 1 || limit > 100 || len(accountIDs) > 1 {
+		return nil, core.Invalid("Use a valid activity cursor and a limit between 1 and 100.")
+	}
 	if e := s.authorizeAdminRead(ctx, p); e != nil {
 		return nil, e
 	}
+	accountID := ""
+	if len(accountIDs) == 1 {
+		accountID = accountIDs[0]
+	}
+	if accountID != "" {
+		if len(accountID) > 64 {
+			return nil, core.Invalid("Use a valid connection ID.")
+		}
+		// Retain scoped history after disconnect, while hiding foreign identifiers.
+		var exists bool
+		if e := s.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM accounts WHERE workspace_id=$1 AND id=$2)", p.WorkspaceID, accountID).Scan(&exists); e != nil {
+			return nil, e
+		}
+		if !exists {
+			return nil, core.ErrNotFound
+		}
+	}
 	page := &core.AuditPage{Events: []core.AuditEvent{}}
-	rows, e := s.Pool.Query(ctx, "SELECT e.id,e.action,u.email,e.occurred_at,e.target FROM audit_events e JOIN users u ON u.id=e.actor_id WHERE e.workspace_id=$1 AND ($2::bigint=0 OR e.id<$2) ORDER BY e.id DESC LIMIT $3", p.WorkspaceID, cursor, limit+1)
+	rows, e := s.Pool.Query(ctx, "SELECT e.id,e.action,u.email,e.occurred_at,e.target,COALESCE(e.account_id,'') FROM audit_events e JOIN users u ON u.id=e.actor_id WHERE e.workspace_id=$1 AND ($2::bigint=0 OR e.id<$2) AND ($4::text='' OR e.account_id=$4) ORDER BY e.id DESC LIMIT $3", p.WorkspaceID, cursor, limit+1, accountID)
 	if e != nil {
 		return nil, e
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var event core.AuditEvent
-		if e = rows.Scan(&event.ID, &event.Action, &event.ActorEmail, &event.OccurredAt, &event.Target); e != nil {
+		if e = rows.Scan(&event.ID, &event.Action, &event.ActorEmail, &event.OccurredAt, &event.Target, &event.AccountID); e != nil {
 			return nil, e
 		}
 		page.Events = append(page.Events, event)
@@ -357,15 +362,16 @@ func (s *Store) CreateHandoff(ctx context.Context, p *core.Principal, input core
 	if paused {
 		return nil, false, core.ErrPaused
 	}
-	var service, agent string
-	e = tx.QueryRow(ctx, "SELECT service,agent FROM accounts WHERE workspace_id=$1 AND id=$2 AND revoked_at IS NULL", p.WorkspaceID, input.AccountID).Scan(&service, &agent)
+	var service, origin string
+	var permitted bool
+	e = tx.QueryRow(ctx, "SELECT a.service,a.origin,EXISTS(SELECT 1 FROM account_agents g WHERE g.workspace_id=a.workspace_id AND g.account_id=a.id AND g.agent=$3) FROM accounts a WHERE a.workspace_id=$1 AND a.id=$2 AND a.revoked_at IS NULL", p.WorkspaceID, input.AccountID, input.Agent).Scan(&service, &origin, &permitted)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return nil, false, core.ErrNotFound
 	}
 	if e != nil {
 		return nil, false, e
 	}
-	if input.Agent != agent || input.TargetOrigin != core.ServiceOrigins[service] {
+	if !permitted || input.TargetOrigin != origin {
 		return nil, false, core.Invalid("The origin and agent must match the connected account.")
 	}
 	// A request key cannot transfer authority to a second actor or new session.
@@ -388,7 +394,7 @@ func (s *Store) CreateHandoff(ctx context.Context, p *core.Principal, input core
 		return nil, false, e
 	}
 	now := time.Now().UTC()
-	h := &core.Handoff{ID: core.NewID(), AccountID: input.AccountID, Agent: agent, TargetOrigin: input.TargetOrigin, BrowserSessionID: input.BrowserSessionID, TabID: input.TabID, Simulated: true, CreatedAt: now, ExpiresAt: now.Add(time.Minute)}
+	h := &core.Handoff{ID: core.NewID(), AccountID: input.AccountID, Agent: input.Agent, TargetOrigin: input.TargetOrigin, BrowserSessionID: input.BrowserSessionID, TabID: input.TabID, Simulated: true, CreatedAt: now, ExpiresAt: now.Add(time.Minute)}
 	h.Status, e = s.Browser.Consume(ctx, *h)
 	if e != nil {
 		return nil, false, e
@@ -399,7 +405,7 @@ func (s *Store) CreateHandoff(ctx context.Context, p *core.Principal, input core
 	if e != nil {
 		return nil, false, e
 	}
-	if e = audit(ctx, tx, p, "handoff.simulated", service+" / "+agent); e != nil {
+	if e = auditAccount(ctx, tx, p, "handoff.simulated", service+" / "+input.Agent, input.AccountID); e != nil {
 		return nil, false, e
 	}
 	if e = tx.Commit(ctx); e != nil {

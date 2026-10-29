@@ -1,280 +1,61 @@
 "use client";
 
-import EnvironmentNote from "@/components/environment-note";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import SiteHeader from "@/components/site-header";
-import SelectField from "@/components/select-field";
-import { APIError, canManage, createAccount, errorMessage, getSession, removeAccount, setAccessPaused, testHandoff, type WorkspaceSession } from "@/lib/client";
-import { type AgentName, type DemoAccount, type ServiceName } from "@/lib/demo-session";
+import WorkspaceShell from "./workspace-shell";
+import PlatformIcon from "./platform-icon";
+import SelectField from "./select-field";
+import { canManage, setAccessPaused } from "@/lib/client";
+import { useWorkspace } from "@/lib/use-workspace";
+import { platformHost } from "@/lib/platforms";
 import styles from "./accounts-workspace.module.css";
-
-const services: ServiceName[] = ["GitHub", "Linear", "Notion"];
-const agents: AgentName[] = ["Claude", "Codex", "Cursor"];
-const destinations: Record<ServiceName, string> = { GitHub: "github.com", Linear: "linear.app", Notion: "www.notion.so" };
+import ui from "./connection-ui.module.css";
 
 export default function AccountsWorkspace() {
-  const router = useRouter();
-  const [session, setSession] = useState<WorkspaceSession | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [formOpen, setFormOpen] = useState(false);
-  const [service, setService] = useState<ServiceName | "">("");
-  const [agent, setAgent] = useState<AgentName | "">("");
-  const [mutation, setMutation] = useState<string | null>(null);
-  const [formError, setFormError] = useState("");
-  const [invalidField, setInvalidField] = useState<"service" | "agent" | null>(null);
+  const { session, setSession, loading, loadError, refresh, alive, message, router } = useWorkspace();
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("All connections");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-  const mounted = useRef(false);
   const pending = useRef(false);
-  const loadSequence = useRef(0);
-  const openedFromURL = useRef(false);
-  const handoffKeys = useRef(new Map<string, string>());
-  const addButton = useRef<HTMLButtonElement>(null);
-  const serviceSelect = useRef<HTMLButtonElement>(null);
-  const agentSelect = useRef<HTMLButtonElement>(null);
-  const removeButtons = useRef(new Map<string, HTMLButtonElement>());
-  const focusFrame = useRef<number | null>(null);
-  const busy = mutation !== null;
   const manager = session ? canManage(session) : false;
-
-  const refreshSession = useCallback(async () => {
-    if (pending.current) return;
-    const sequence = ++loadSequence.current;
-    setLoading(true);
-    setLoadError("");
-    try {
-      const next = await getSession();
-      if (!mounted.current || sequence !== loadSequence.current) return;
-      if (!next) { router.replace("/login/"); return; }
-      setSession(next);
-      if (!openedFromURL.current) {
-        const shouldOpen = new URLSearchParams(window.location.search).get("connect") === "1";
-        setFormOpen(canManage(next) && shouldOpen);
-        openedFromURL.current = true;
-        if (shouldOpen) router.replace("/accounts/", { scroll: false });
-      } else if (!canManage(next)) setFormOpen(false);
-      setLoading(false);
-    } catch (failure) {
-      if (!mounted.current || sequence !== loadSequence.current) return;
-      setLoadError(errorMessage(failure));
-      setLoading(false);
-    }
-  }, [router]);
-
-  useEffect(() => {
-    mounted.current = true;
-    void refreshSession();
-    const refresh = () => { void refreshSession(); };
-    window.addEventListener("pageshow", refresh);
-    return () => {
-      mounted.current = false;
-      loadSequence.current += 1;
-      if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current);
-      window.removeEventListener("pageshow", refresh);
-    };
-  }, [refreshSession]);
-
-  useEffect(() => { if (formOpen && !loading) serviceSelect.current?.focus(); }, [formOpen, loading]);
-
-  function focusAfterUpdate(target: "add" | string = "add") {
-    if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current);
-    focusFrame.current = requestAnimationFrame(() => {
-      if (!mounted.current) return;
-      if (target === "add") (addButton.current ?? serviceSelect.current)?.focus();
-      else removeButtons.current.get(target)?.focus();
-    });
-  }
-
-  function beginMutation(kind: string) {
-    if (pending.current || !session || (kind !== "signout" && !canManage(session))) return false;
-    pending.current = true;
-    loadSequence.current += 1;
-    setMutation(kind);
-    setError("");
-    setStatus("");
-    setFormError("");
-    setInvalidField(null);
-    return true;
-  }
-
-  function finishMutation() {
-    pending.current = false;
-    if (mounted.current) setMutation(null);
-  }
-
-  async function showFailure(failure: unknown, inForm = false) {
-    if (!mounted.current) return;
-    if (failure instanceof APIError && failure.status === 401) { router.replace("/login/"); return; }
-    if (inForm) setFormError(errorMessage(failure));
-    else setError(errorMessage(failure));
-    if (failure instanceof APIError && failure.status === 403) {
-      try {
-        const next = await getSession();
-        if (!mounted.current) return;
-        if (!next) { router.replace("/login/"); return; }
-        setSession(next);
-        if (!canManage(next)) {
-          setFormOpen(false);
-          setFormError("");
-          setError("Your workspace admin manages access.");
-        }
-      } catch { /* Keep the original, actionable failure visible. */ }
-    }
-  }
-
-  function cancelConnection() {
-    if (pending.current) return;
-    setFormOpen(false);
-    setFormError("");
-    setInvalidField(null);
-    setStatus("");
-    focusAfterUpdate();
-  }
-
-  async function connectAccount(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!session || pending.current || !manager) return;
-    if (!service) {
-      setFormError("Choose an account to connect.");
-      setInvalidField("service");
-      serviceSelect.current?.focus();
-      return;
-    }
-    if (!agent) {
-      setFormError("Choose which agent can use this account.");
-      setInvalidField("agent");
-      agentSelect.current?.focus();
-      return;
-    }
-    if (session.accounts.some((account) => account.service === service && account.agent === agent)) {
-      setFormError(`${service} is already connected for ${agent}. Choose another account or agent.`);
-      setInvalidField("service");
-      serviceSelect.current?.focus();
-      return;
-    }
-    if (!beginMutation("connect")) return;
-    setInvalidField(null);
-    try {
-      const next = await createAccount(service, agent);
-      if (!mounted.current) return;
-      setSession(next);
-      setStatus(`${service} connected for ${agent}.${next.accessPaused ? " Access is still paused." : ""}`);
-      setFormOpen(false);
-      focusAfterUpdate();
-    } catch (failure) {
-      await showFailure(failure, true);
-    } finally { finishMutation(); }
-  }
-
-  async function disconnectAccount(account: DemoAccount) {
-    if (!session || !beginMutation(`remove:${account.id}`)) return;
-    const index = session.accounts.findIndex((item) => item.id === account.id);
-    try {
-      const next = await removeAccount(account.id);
-      if (!mounted.current) return;
-      handoffKeys.current.delete(account.id);
-      setSession(next);
-      setStatus(`${account.service} removed for ${account.agent}.`);
-      focusAfterUpdate(next.accounts[Math.min(index, next.accounts.length - 1)]?.id ?? "add");
-    } catch (failure) { await showFailure(failure); }
-    finally { finishMutation(); }
-  }
-
+  useEffect(() => { if (session && manager && new URLSearchParams(window.location.search).get("connect") === "1") router.replace("/accounts/new/"); }, [session, manager, router]);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("removed") === "1") setStatus("Connection deleted. Its agent permissions have been removed."); }, []);
+  const accounts = useMemo(() => (session?.accounts ?? []).filter(account => {
+    const matches = `${account.service} ${account.origin} ${account.username} ${account.agents.join(" ")}`.toLowerCase().includes(query.toLowerCase().trim());
+    return matches && (filter === "All connections" || (filter === "With access" && account.agents.length > 0 && !session?.accessPaused) || (filter === "No agents" && account.agents.length === 0) || (filter === "Paused" && session?.accessPaused));
+  }), [session, query, filter]);
   async function toggleAccess() {
-    if (!session || !beginMutation("access")) return;
-    try {
-      const next = await setAccessPaused(!session.accessPaused);
-      if (!mounted.current) return;
-      setSession(next);
-      setStatus(next.accessPaused ? "Access paused for all accounts." : "Access resumed for all accounts.");
-    } catch (failure) { await showFailure(failure); }
-    finally { finishMutation(); }
+    if (pending.current || !session || !manager) return;
+    pending.current = true; setBusy(true); setError(""); setStatus("");
+    try { const next = await setAccessPaused(!session.accessPaused); if (alive.current) { setSession(next); setStatus(next.accessPaused ? "All connection access paused." : "Access resumed for permitted agents."); } }
+    catch (failure) { if (alive.current) setError(message(failure)); }
+    finally { pending.current = false; if (alive.current) setBusy(false); }
   }
-
-  async function handleHandoff(account: DemoAccount) {
-    if (!session || session.accessPaused || !beginMutation(`handoff:${account.id}`)) return;
-    const key = handoffKeys.current.get(account.id) ?? crypto.randomUUID();
-    handoffKeys.current.set(account.id, key);
-    try {
-      const result = await testHandoff(account, key);
-      if (!mounted.current) return;
-      if (!result.simulated || result.status !== "simulated") throw new APIError("The demo handoff could not be confirmed.", 502, "unexpected_handoff");
-      handoffKeys.current.delete(account.id);
-      setStatus("Demo handoff complete. External sign-in uses a placeholder.");
-    } catch (failure) {
-      const uncertain = !(failure instanceof APIError) || failure.status === 0 || failure.status >= 500;
-      if (!uncertain) handoffKeys.current.delete(account.id);
-      await showFailure(failure);
-      if (mounted.current && uncertain) setError(`${errorMessage(failure)} Retry checks the same demo attempt.`);
-    } finally { finishMutation(); }
-  }
-
-  return (
-    <div className="page app-page">
-      <SiteHeader action={session && !loading && !loadError ? <>
-        {manager && <Link href="/activity/" className={styles.textButton}>Activity</Link>}
-        <Link href="/settings/" className={styles.textButton}>Settings</Link>
-      </> : undefined} />
-      <main id="main" className={`app-main ${styles.main}`}>
-        {loading || loadError || !session ? (
-          <div className={styles.loading} role={loadError ? "alert" : "status"}>
-            <p>{loadError || "Opening your workspace…"}</p>
-            {loadError && <button type="button" className={styles.textButton} onClick={() => void refreshSession()}>Try again <span aria-hidden="true">↗</span></button>}
-          </div>
-        ) : (
-          <>
-            <div className={styles.heading}>
-              <div><h1 className={styles.title}>Connected accounts.</h1><p className={styles.identity}>{session.email}</p></div>
-              {manager && session.accounts.length > 0 && <button type="button" className={styles.textButton} onClick={toggleAccess} disabled={busy}>
-                {mutation === "access" ? "Updating…" : session.accessPaused ? "Resume access" : "Pause access"}
-              </button>}
-            </div>
-            {!manager && <p className={styles.empty}>Your workspace admin manages access.</p>}
-            {session.accounts.length === 0 ? (
-              <p className={styles.empty}>{manager ? "Connect an account. Choose which agent can use it." : "No accounts are connected yet."}</p>
-            ) : (
-              <ul className={styles.accounts} aria-label="Connected accounts">
-                {session.accounts.map((account) => <li key={account.id} className={styles.account}>
-                  <div className={styles.accountName}><strong>{account.service}</strong><span>For {account.agent} · {destinations[account.service]}</span></div>
-                  <span className={`${styles.accountStatus} ${session.accessPaused ? styles.paused : ""}`}><i aria-hidden="true" />{session.accessPaused ? "Paused" : "Ready"}</span>
-                  {manager && <div className={styles.accountActions}>
-                    <button type="button" className={styles.textButton} disabled={busy || session.accessPaused} aria-label={`Test sign-in to ${account.service} for ${account.agent}`} onClick={() => void handleHandoff(account)}>
-                      {mutation === `handoff:${account.id}` ? "Testing…" : handoffKeys.current.has(account.id) ? "Retry test" : "Test sign-in"}
-                    </button>
-                    <button type="button" className={`${styles.textButton} ${styles.removeButton}`} disabled={busy} aria-label={`Remove ${account.service} for ${account.agent}`}
-                      ref={(element) => { if (element) removeButtons.current.set(account.id, element); else removeButtons.current.delete(account.id); }} onClick={() => void disconnectAccount(account)}>
-                      {mutation === `remove:${account.id}` ? "Removing…" : "Remove"}
-                    </button>
-                  </div>}
-                </li>)}
-              </ul>
-            )}
-            {manager && (formOpen ? (
-              <form className={styles.connectForm} onSubmit={connectAccount} aria-labelledby="connect-title" aria-busy={mutation === "connect"}>
-                <h2 id="connect-title" className={styles.formTitle}>Connect a demo account.</h2>
-                <div className={styles.fields}>
-                  <SelectField id="account-service" ref={serviceSelect} label="Account" value={service} options={services} placeholder="Choose an account" disabled={busy} required invalid={invalidField === "service"} describedBy={invalidField === "service" ? "connection-error" : undefined} onChange={(value) => { setService(value as ServiceName); setFormError(""); setInvalidField(null); }} />
-                  <SelectField id="account-agent" ref={agentSelect} label="Allow access for" value={agent} options={agents} placeholder="Choose an agent" disabled={busy} required invalid={invalidField === "agent"} describedBy={invalidField === "agent" ? "connection-error" : undefined} onChange={(value) => { setAgent(value as AgentName); setFormError(""); setInvalidField(null); }} />
-                </div>
-                {service && <p className={styles.scope}>Access is limited to {destinations[service]}.</p>}
-                {formError && <p id="connection-error" className={styles.error} role="alert">{formError}</p>}
-                <div className={styles.formActions}>
-                  <button type="submit" className={styles.primaryButton} disabled={busy}>{mutation === "connect" ? "Connecting…" : "Connect demo account"}<span aria-hidden="true">{mutation === "connect" ? "·" : "↗"}</span></button>
-                  <button type="button" className={styles.textButton} onClick={cancelConnection} disabled={busy}>Cancel</button>
-                </div>
-              </form>
-            ) : (
-              <div className={styles.addAction}><button ref={addButton} type="button" className={styles.primaryButton} disabled={busy} onClick={() => { setStatus(""); setError(""); setFormError(""); setInvalidField(null); setService(""); setAgent(""); setFormOpen(true); }}>Add account <span aria-hidden="true">+</span></button></div>
-            ))}
-            {error && <p className={styles.error} role="alert">{error}</p>}
-            <p className={styles.status} role="status" aria-live="polite" aria-atomic="true">{status}</p>
-          </>
-        )}
-      </main>
-      <footer className="app-footer"><EnvironmentNote /></footer>
-    </div>
-  );
+  return <WorkspaceShell active="connections" email={session?.email} canViewActivity={manager}>
+    <main id="main" className={ui.main}>
+      <div className={ui.heading}><div><p className={ui.eyebrow}>YOUR WORKSPACE</p><h1>Connections<span className={styles.count}>{session?.accounts.length ?? ""}</span></h1><p className={ui.description}>Your accounts. Only the access you allow.</p></div>{manager && <Link className={ui.primary} href="/accounts/new/">Add connection <span aria-hidden="true">+</span></Link>}</div>
+      {loading || loadError || !session ? <div className={ui.loading} role={loadError ? "alert" : "status"}><p>{loadError || "Loading connections…"}</p>{loadError && <button className={ui.textButton} onClick={() => void refresh()}>Try again</button>}</div> : <>
+        {session.accessPaused && <div className={styles.pausedNotice}><span><strong>All access is paused.</strong> Your connections and permissions are still saved.</span>{manager && <button className={ui.textButton} disabled={busy} onClick={toggleAccess}>{busy ? "Updating…" : "Resume access"} <span aria-hidden="true">→</span></button>}</div>}
+        {session.accounts.length === 0 ? <div className={styles.empty}>
+          <div className={styles.emptyMark} aria-hidden="true"><svg width="34" height="40" viewBox="0 0 34 40" fill="none"><path d="M8 35V5h18v30M3 35h28m-15-15h12m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+          <h2>Your first connection.</h2><p>{manager ? "Choose a website, add demo sign-in details, and decide which agents get access." : "Your workspace admin can connect an account."}</p>
+          {manager && <Link className={ui.textButton} href="/accounts/new/">Connect an account <span aria-hidden="true">→</span></Link>}
+        </div> : <>
+          <div className={styles.toolbar}><div className={styles.search}><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.3"/><path d="m13 13 4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg><input aria-label="Search connections" placeholder="Search connections" value={query} onChange={event => setQuery(event.target.value)} type="search" /></div><SelectField id="connection-filter" label="Show" value={filter} options={["All connections", "With access", "No agents", "Paused"]} placeholder="Filter connections" onChange={setFilter} /></div>
+          <div className={styles.columnLabels} aria-hidden="true"><span>CONNECTION</span><span>PERMITTED AGENTS</span><span>ACCESS</span><span /></div>
+          <ul className={styles.accounts} aria-label="Connections">{accounts.map(account => <li key={account.id}><Link className={styles.account} href={`/accounts/connection/?id=${encodeURIComponent(account.id)}`}>
+            <div className={styles.accountIdentity}><PlatformIcon origin={account.origin} name={account.service} size={38}/><div><strong>{account.service}</strong><span>{account.username || platformHost(account.origin)}</span></div></div>
+            <span className={styles.agentNames}>{account.agents.length ? account.agents.join(", ") : "No agents allowed"}</span>
+            <span className={`${ui.badge} ${session.accessPaused || !account.agents.length ? ui.badgeMuted : ""}`}>{session.accessPaused ? "Paused" : account.agents.length ? "Demo ready" : "No access"}</span><span className={styles.rowArrow} aria-hidden="true">↗</span>
+          </Link></li>)}</ul>
+          {accounts.length === 0 && <div className={styles.noResults}><p>No connections match this view.</p><button className={ui.textButton} onClick={() => { setQuery(""); setFilter("All connections"); }}>Clear filters</button></div>}
+          <div className={styles.listFooter}><span>{accounts.length} of {session.accounts.length} connections</span>{manager && !session.accessPaused && <button className={ui.textButton} disabled={busy} onClick={toggleAccess}>{busy ? "Pausing…" : "Pause all access"}</button>}</div>
+        </>}
+        {!manager && session.accounts.length > 0 && <p className={ui.note}>Your workspace admin manages connections and agent permissions.</p>}
+        {error && <p className={ui.error} role="alert">{error}</p>}{status && <p className={ui.status} role="status">{status}</p>}
+      </>}
+    </main>
+  </WorkspaceShell>;
 }
