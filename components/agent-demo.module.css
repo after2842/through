@@ -1,77 +1,85 @@
-.demo { width: 100%; color: #202a24; font-family: inherit; }
-.demoLabel { display: flex; align-items: center; gap: 7px; margin: 0 0 18px 28px; font-size: 9px; font-weight: 600; letter-spacing: .115em; color: #718078; }
-.liveDot { width: 5px; height: 5px; border-radius: 50%; background: #729783; }
-.demoTag { margin-left: auto; font-size: 10px; font-weight: 400; letter-spacing: -.02em; color: #90968d; }
-.scene { position: relative; min-height: 505px; }
-.browser { width: calc(100% - 27px); margin-left: 27px; overflow: hidden; border: 1px solid #d6dbd0; border-radius: 11px; background: #fffef9; box-shadow: 0 15px 55px #263c2c08, 0 3px 7px #263c2c03; }
-.browserBar { height: 39px; display: flex; align-items: center; gap: 18px; padding: 0 13px; background: #f0f1e9; border-bottom: 1px solid #e0e3d9; }
-.trafficLights { display: flex; gap: 4px; }
-.trafficLights i { width: 6px; height: 6px; border-radius: 50%; background: #d2d6cc; }
-.trafficLights i:first-child { background: #cfbbb0; }
-.trafficLights i:nth-child(2) { background: #d8cfb2; }
-.trafficLights i:nth-child(3) { background: #becbb8; }
-.address { display: flex; justify-content: center; align-items: center; gap: 7px; width: 67%; height: 23px; border: 1px solid #e1e4da; background: #fafbf6; border-radius: 4px; color: #7c847b; font-size: 9px; letter-spacing: .01em; }
-.browserMenu { margin-left: auto; line-height: 1; font-size: 17px; color: #8b9388; }
-.workspaceBar { display: flex; align-items: center; height: 49px; padding: 0 22px; border-bottom: 1px solid #eeeee4; gap: 8px; font-size: 10px; font-weight: 600; color: #525c50; }
-.workspaceLogo { font-family: Georgia, serif; font-size: 24px; line-height: 1; font-weight: 700; color: #78866b; letter-spacing: -3px; width: 23px; }
-.workspaceLogo span { color: #b1b99f; }
-.workspaceLocation { margin-left: auto; font-weight: 400; color: #a2a599; font-size: 9px; }
-.browserBody { min-height: 294px; background-image: radial-gradient(#929b7e15 .65px, transparent .65px); background-size: 11px 11px; }
-.loginContent { width: 224px; margin: 0 auto; padding: 28px 0 37px; text-align: center; }
-.loginIcon { display: grid; place-items: center; width: 43px; height: 43px; margin: 0 auto 13px; border: 1px solid #e0e5d7; background: #f5f7ee; border-radius: 12px; color: #7e8e72; }
-.loginContent h3 { margin: 0; font-size: 17px; letter-spacing: -.065em; font-weight: 500; color: #727969; }
-.loginContent p { margin: 7px 0 20px; font-size: 10px; color: #a0a596; letter-spacing: -.02em; }
-.mockLoginButton { display: flex; align-items: center; justify-content: center; gap: 8px; height: 35px; border: 1px solid #dce1d4; border-radius: 5px; font-size: 10px; color: #808b77; background: #fffef9; }
-.mockLoginButton svg { width: 12px; margin-left: 9px; }
-.miniAccount { width: 17px; height: 17px; border-radius: 50%; background: #edeadd; color: #7d806f; display: grid; place-items: center; font-family: Georgia, serif; font-size: 11px; }
-.mockDivider { display: flex; align-items: center; gap: 10px; color: #b2b6a8; font-size: 9px; margin: 12px 0; }
-.mockDivider span { height: 1px; flex: 1; background: #e8ebdf; }
-.mockField { height: 33px; border: 1px solid #e6e9df; border-radius: 5px; display: grid; place-items: center; font-size: 10px; color: #a8aea0; background: #fffef988; }
-.agentTask { position: absolute; top: 53px; left: 0; display: flex; align-items: center; gap: 10px; width: 294px; padding: 12px 14px; border: 1px solid #dbe1d2; border-radius: 7px; background: #fffef9; box-shadow: 0 4px 15px #1a322208; z-index: 2; }
-.agentAvatar { flex: 0 0 31px; height: 31px; background: #eeeee4; border: 1px solid #e2e5d9; border-radius: 7px; display: grid; place-items: center; color: #73836e; }
-.agentTask strong { display: block; font-size: 10px; font-weight: 500; letter-spacing: -.03em; line-height: 1.5; }
-.agentTask small { display: block; margin-top: 3px; color: #9a9d8e; font-size: 9px; }
-.taskIndicator { display: grid; place-items: center; margin-left: auto; width: 23px; height: 23px; border-radius: 50%; background: #f4f0df; color: #aa986a; }
-.pauseIcon { font-size: 11px; font-weight: 700; line-height: 1; }
-.agentTaskDone .taskIndicator { background: #e5f0e3; color: #5a826a; }
-.taskIndicatorBusy { color: #65856d; background: #eaf0e4; }
-.taskIndicator .spinner { width: 11px; height: 11px; }
-.handoff { position: absolute; z-index: 3; top: 266px; left: 0; width: min(352px, calc(100% - 40px)); padding: 18px 19px 12px; background: #d9ebdd; border: 1px solid #bfd3bd; border-radius: 10px; box-shadow: 0 14px 32px #314c2910, 0 4px 6px #314c2905; transition: background .25s ease, border-color .25s ease; }
-.handoffTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 17px; }
-.throughBrand { display: flex; align-items: center; gap: 5px; color: #375a44; }
-.throughBrand span { font-family: Georgia, "Times New Roman", serif; font-size: 23px; letter-spacing: -1.4px; }
-.secureBadge { display: flex; align-items: center; gap: 4px; color: #6f8d70; font-size: 8px; letter-spacing: -.01em; }
-.handoffStatus h4 { margin: 0; font-size: 15px; font-weight: 500; letter-spacing: -.055em; color: #365040; line-height: 1.45; }
-.handoffStatus p { margin: 5px 0 15px; font-size: 10px; letter-spacing: -.025em; color: #597357; line-height: 1.6; }
-.connectionRow { display: flex; align-items: center; gap: 9px; padding: 10px 11px; border: 1px solid #c8dbbf; border-radius: 5px; background: #ecf4e450; }
-.accountAvatar { display: grid; place-items: center; flex: 0 0 28px; height: 28px; border-radius: 50%; background: #c7d9bc; color: #4e6949; font-family: Georgia, serif; font-size: 15px; }
-.connectionRow strong { display: block; color: #52694b; font-size: 10px; font-weight: 500; line-height: 1.4; }
-.connectionRow div > span { display: block; color: #5e7558; font-size: 8px; margin-top: 2px; }
-.accountCheck { margin-left: auto; color: #789573; }
-.accountCheck svg { width: 14px; }
-.connectButton { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 38px; padding: 0 13px; margin-top: 11px; border: 1px solid #3c5944; border-radius: 5px; background: #345541; color: #f5f7eb; font-size: 11px; font-family: inherit; letter-spacing: -.02em; cursor: pointer; transition: background .2s, transform .2s; }
-.connectButton:hover:not(:disabled) { background: #244331; transform: translateY(-1px); }
-.connectButton:active:not(:disabled) { transform: translateY(0); }
-.connectButton:focus-visible { outline: 2px solid #345541; outline-offset: 4px; }
-.connectButton:disabled { cursor: wait; background: #55715a; border-color: #55715a; }
-.demoDisclaimer { display: block; margin-top: 10px; text-align: center; color: #526d50; font-size: 8px; line-height: 1.5; letter-spacing: -.025em; }
-.connectionPath { position: absolute; top: 327px; right: 16px; width: 84px; height: 120px; color: #b4c6ac; z-index: 0; }
-.connectionPath svg { width: 100%; height: 100%; }
-.spinner { display: inline-block; width: 13px; height: 13px; border: 1.5px solid currentColor; border-right-color: transparent; opacity: .7; border-radius: 50%; animation: spin .7s linear 6; }
-.browserDone { background-color: #f9fbf3; }
-.releaseContent { width: 224px; margin: 0 auto; padding: 34px 0; }
-.releaseEyebrow { font-size: 7px; font-weight: 600; letter-spacing: .13em; color: #91a087; }
-.releaseContent h3 { margin: 10px 0 14px; font-family: inherit; font-weight: 400; font-size: 24px; letter-spacing: -.07em; line-height: 1.3; color: #6e7b64; }
-.releaseItem { display: flex; align-items: center; gap: 8px; }
-.releaseVersion { font-size: 11px; color: #71816a; }
-.releaseNew { color: #88a27a; border: 1px solid #d8e1cc; border-radius: 3px; padding: 2px 4px; font-size: 7px; }
-.releaseContent p { font-size: 9px; color: #96a08b; }
-.releaseLines { margin-top: 18px; display: grid; gap: 7px; }
-.releaseLines i { height: 4px; border-radius: 2px; background: #e3e8db; }
-.releaseLines i:nth-child(2) { width: 88%; }
-.releaseLines i:nth-child(3) { width: 64%; }
-.handoffDone { background: #daebdc; border-color: #afc9ae; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 1050px) and (min-width: 801px) { .agentTask { width: 270px; } .handoff { width: min(335px, calc(100% - 20px)); } .secureBadge { font-size: 7px; } }
-@media (max-width: 520px) { .demoLabel { margin-left: 12px; font-size: 8px; gap: 5px; } .demoTag { font-size: 8px; } .scene { min-height: 512px; } .browser { width: calc(100% - 12px); margin-left: 12px; } .browserBar { gap: 10px; padding: 0 10px; } .address { font-size: 8px; width: 70%; } .workspaceBar { padding: 0 14px; } .workspaceLocation { font-size: 8px; } .agentTask { top: 57px; width: min(280px, calc(100% - 18px)); padding: 10px 12px; } .handoff { top: 273px; width: min(352px, calc(100% - 15px)); padding: 16px 16px 12px; } .handoffStatus h4 { font-size: 14px; } .connectionPath { display: none; } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .handoff, .connectButton { transition: none; } }
+.demo {
+  --paper: #faf8f1;
+  --sky: #c6e3f4;
+  --blue: #417b9b;
+  width: 100%;
+  color: #242b29;
+}
+.workflow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 180px 1fr;
+  min-height: 175px;
+  isolation: isolate;
+}
+.flowLine {
+  position: absolute;
+  z-index: -1;
+  left: 17%;
+  top: 78px;
+  width: 66%;
+  height: 2px;
+  overflow: visible;
+}
+.basePath { stroke: #dedfd8; stroke-width: 1; }
+.activePath {
+  stroke: var(--blue);
+  stroke-width: 1.1;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  transition: stroke-dashoffset 1s ease;
+}
+.station {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 58px;
+}
+.agentSymbol, .destinationSymbol {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  background: var(--paper);
+  color: #626d65;
+}
+.destinationSymbol { color: #babfb7; transition: color .5s ease; }
+.stationText { display: flex; align-items: baseline; gap: 9px; margin-top: 23px; white-space: nowrap; }
+.stationText strong { font-size: 15px; font-weight: 450; letter-spacing: -.025em; }
+.stationText span { font-size: 11px; color: #6f7b79; letter-spacing: -.025em; }
+.threshold { display: flex; flex-direction: column; align-items: center; }
+.brand { font-family: var(--serif), Georgia, serif; font-size: 25px; font-weight: 400; line-height: 1.1; letter-spacing: -1.7px; }
+.doorway { display: block; margin-top: 4px; background: var(--paper); }
+.doorFill { fill: #eaf3f7; transition: fill .6s ease; }
+.doorOutline { stroke: #9ccae1; transition: stroke .6s ease; }
+.doorArrow { stroke: #75a7c1; }
+.connectionStatus { display: flex; align-items: center; gap: 6px; min-height: 18px; margin-top: 10px; font-size: 11px; color: #5c7682; letter-spacing: -.025em; }
+.connectionStatus i { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #a2b5bc; }
+.action { display: flex; justify-content: center; margin-top: 20px; padding-bottom: 8px; }
+.button { display: flex; align-items: center; justify-content: center; gap: 26px; min-width: 178px; min-height: 44px; padding: 0 18px; border: 1px solid #aecde0; border-radius: 3px; background: var(--sky); color: #294e62; font-family: inherit; font-size: 12px; letter-spacing: -.025em; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.button:hover:not(:disabled) { background: #b4daef; border-color: #95bbd0; }
+.button:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
+.button:disabled { cursor: wait; color: #5f859b; background: #dfedf4; }
+.connected .activePath { stroke-dashoffset: 0; }
+.connected .destinationSymbol { color: var(--blue); }
+.connected .doorFill { fill: #d9edf8; }
+.connected .doorOutline { stroke: var(--blue); }
+.connected .connectionStatus { color: var(--blue); }
+.connected .connectionStatus i { background: var(--blue); }
+.loadingDot { animation: pulse .7s ease-in-out 4 alternate; }
+@keyframes pulse { from { opacity: .25; } to { opacity: 1; } }
+@media (max-width: 650px) {
+  .workflow { grid-template-columns: 1fr 100px 1fr; min-height: 175px; }
+  .flowLine { left: 14%; width: 72%; }
+  .stationText { flex-direction: column; align-items: center; gap: 5px; margin-top: 22px; }
+  .stationText strong { font-size: 13px; }
+  .stationText span { font-size: 11px; }
+  .brand { font-size: 23px; }
+  .connectionStatus { font-size: 11px; gap: 5px; }
+  .action { margin-top: 20px; }
+  .button { min-height: 44px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .activePath, .destinationSymbol, .doorFill, .doorOutline, .button { transition: none; }
+  .loadingDot { animation: none; }
+}
