@@ -6,8 +6,8 @@ const sans = DM_Sans({ subsets: ["latin"], variable: "--font-sans", display: "sw
 const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "through — Past the login. Back to work.",
-  description: "Your agent signs in with your connected accounts, then gets back to work in the same browser. Explore the through interactive demo.",
+  title: "through — Your agent signs in. The work continues.",
+  description: "When an AI agent reaches a login page in its built-in browser, through enters the credentials you approved and hands the tab back. Watch the interactive demo.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

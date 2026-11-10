@@ -16,7 +16,7 @@ The repository implements a frontend and a Go/PostgreSQL development sandbox. Ex
 
 | Route or capability | User task | Boundary |
 |---|---|---|
-| `/`, signed out | Understand the product and try one illustrative handoff; see one lower use case showing a login screen and resumed work | Screens contain fictional data and masked dots, with an explicit illustrative-demo label; no tested external integration claim |
+| `/`, signed out | Understand the product and watch one illustrative handoff in an agent's built-in browser (play, pause, jump between six steps, switch the named agent); read How it works and Controls | Screens contain fictional data and masked dots, with an explicit illustrative-demo label; Controls end with a Preview line; no tested external integration or certification claim |
 | `/`, signed in | See actual workspace connection state and the next useful action | Service mode reads the authenticated workspace from Go; static mode reads local demo state |
 | `/login` | Enter a dummy email, then `0000`; correct a code or start again | No email, authenticator enrollment, Google sign-in, or real identity verification |
 | `/accounts` | Search and filter connections; inspect permitted agents; pause/resume workspace access | Changes are server-enforced in service mode; no real provider permission or browser session changes |
