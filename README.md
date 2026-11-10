@@ -40,6 +40,12 @@ Open **`http://127.0.0.1:8080`**. Go serves both the exported frontend and `/api
 
 To run without Docker, use Go 1.27.3+ and follow the [backend setup and configuration](backend/README.md). Go and PostgreSQL were validated directly. Explicit `THROUGH_ENV=development` and `THROUGH_DEMO_AUTH=true` are required. The default production configuration deliberately refuses startup until real external adapters exist. No frontend setting overrides that guard.
 
+## Deploy and connect agents
+
+`infra/gcp` holds minimal Terraform for Google Cloud (Cloud Run and Cloud SQL) and a `deploy.sh` that builds the root `Dockerfile` with Cloud Build. It deploys the same development sandbox, over HTTPS. See [the infrastructure guide](infra/gcp/README.md).
+
+The Go service is also a remote MCP server at `/mcp`, with OAuth sign-in for MCP clients such as Claude and ChatGPT. On the consent screen the user chooses which agent (Claude, Codex, or Cursor) the connection signs in as, and Settings lists and disconnects connections. `plugin/through` is the plugin package for Claude and OpenAI, generated with `npm run plugin -- <origin>`. Sign-in grants stay simulated. [Directory submission readiness](docs/submission.md) lists what is in place and what still blocks a listing.
+
 ## Check
 
 ```sh
@@ -59,6 +65,7 @@ GitHub Actions builds both frontend modes, audits production npm dependencies, a
 - `backend/`: Go API, versioned migrations, PostgreSQL persistence, integration tests, and local container recipe.
 - [Product plan](docs/product-plan.md), [enterprise readiness](docs/enterprise-readiness.md), and [acceptance criteria](docs/acceptance-criteria.md): scope, release stages, and evidence.
 - [Platform research](docs/research/agent-login-platforms.md): dated documentation review, not proof of integrations or marketplace approval.
+- [Directory submission readiness](docs/submission.md): MCP, OAuth, plugin package, and the blockers to a directory listing.
 - [Repository instructions](AGENTS.md) and [through UX skill](.agents/skills/through-ux/SKILL.md): continuing product and design rules.
 
 Keep product copy and documentation in English. Subtract first, then restore only what a user needs to understand and complete the task.

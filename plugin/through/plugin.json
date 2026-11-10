@@ -1,0 +1,47 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "through",
+  "version": "0.1.0",
+  "description": "Lets AI agents check and request sign-in to websites with accounts you connected to through, without ever asking for your password.",
+  "author": {
+    "name": "Samuel Choi",
+    "url": "https://github.com/after2842/through"
+  },
+  "homepage": "https://through-974039737273.us-central1.run.app",
+  "repository": "https://github.com/after2842/through",
+  "license": "Proprietary",
+  "keywords": [
+    "sign-in",
+    "login",
+    "browser",
+    "agents",
+    "permissions"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "through",
+        "shortDescription": "Sign-in for AI agents",
+        "longDescription": "When an agent's browser reaches a login page, through checks whether that agent may use one of your connected accounts for the site and records a single-use, 60-second sign-in grant. You choose the accounts, the sites, and which agents may use each one, and you can pause access or disconnect an app at any time. through never asks for or returns passwords. This is a preview: sign-in grants are simulated and no credentials are entered, so the agent asks you to finish signing in yourself.",
+        "developerName": "Samuel Choi",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://through-974039737273.us-central1.run.app",
+        "supportURL": "https://github.com/after2842/through/issues",
+        "privacyPolicyURL": "https://through-974039737273.us-central1.run.app/privacy/",
+        "termsOfServiceURL": "https://through-974039737273.us-central1.run.app/terms/",
+        "defaultPrompt": [
+          "Check whether you can sign in to GitHub with through.",
+          "Which of my accounts in through can you use?",
+          "Show my recent sign-in activity in through."
+        ],
+        "brandColor": "#3E7695",
+        "composerIcon": "./assets/icon.svg",
+        "logo": "./assets/logo.svg"
+      }
+    }
+  }
+}

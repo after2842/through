@@ -1,0 +1,14 @@
+{
+  "name": "through",
+  "description": "Plugins from the through project",
+  "owner": {
+    "name": "Samuel Choi"
+  },
+  "plugins": [
+    {
+      "name": "through",
+      "source": "./plugin/through",
+      "description": "Lets AI agents check and request sign-in to websites with accounts you connected to through."
+    }
+  ]
+}

@@ -34,6 +34,28 @@ jobs:
       - run: npm run build:${{ matrix.mode }}
       - run: npm run typecheck
 
+  infra:
+    name: Terraform and plugin package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Check Terraform formatting
+        run: terraform -chdir=infra/gcp fmt -check -recursive
+      - name: Validate Terraform
+        run: |
+          terraform -chdir=infra/gcp init -backend=false -input=false
+          terraform -chdir=infra/gcp validate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Plugin package is generated from its source
+        run: |
+          origin="$(node -e "console.log(require('./plugin/through/.claude-plugin/plugin.json').homepage)")"
+          node scripts/build-plugin.mjs "$origin"
+          git diff --exit-code -- plugin/
+
   backend:
     name: Go and PostgreSQL
     runs-on: ubuntu-latest

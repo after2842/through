@@ -1,0 +1,20 @@
+{
+  "name": "through",
+  "version": "0.1.0",
+  "description": "Lets AI agents check and request sign-in to websites with accounts you connected to through, without ever asking for your password.",
+  "author": {
+    "name": "Samuel Choi",
+    "url": "https://github.com/after2842/through"
+  },
+  "homepage": "https://through-974039737273.us-central1.run.app",
+  "repository": "https://github.com/after2842/through",
+  "license": "Proprietary",
+  "keywords": [
+    "sign-in",
+    "login",
+    "browser",
+    "agents",
+    "permissions"
+  ],
+  "privacyPolicyUrl": "https://through-974039737273.us-central1.run.app/privacy/"
+}

@@ -128,7 +128,8 @@ func (s *Store) Authenticate(ctx context.Context, token string) (*core.Principal
 		return nil, core.ErrUnauthorized
 	}
 	p := &core.Principal{SessionHash: core.Hash(token)}
-	e := s.Pool.QueryRow(ctx, "SELECT s.user_id,s.workspace_id,s.csrf_token,m.role FROM sessions s JOIN memberships m ON m.workspace_id=s.workspace_id AND m.user_id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()", p.SessionHash).Scan(&p.UserID, &p.WorkspaceID, &p.CSRFToken, &p.Role)
+	// OAuth access tokens are sessions too, but must never work as a cookie.
+	e := s.Pool.QueryRow(ctx, "SELECT s.user_id,s.workspace_id,s.csrf_token,m.role FROM sessions s JOIN memberships m ON m.workspace_id=s.workspace_id AND m.user_id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now() AND s.oauth_grant_id IS NULL", p.SessionHash).Scan(&p.UserID, &p.WorkspaceID, &p.CSRFToken, &p.Role)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return nil, core.ErrUnauthorized
 	}
@@ -227,7 +228,8 @@ func (s *Store) LogoutOthers(ctx context.Context, p *core.Principal) (int64, err
 	if _, e = lockPolicy(ctx, tx, p, false); e != nil {
 		return 0, e
 	}
-	result, e := tx.Exec(ctx, "DELETE FROM sessions WHERE user_id=$1 AND token_hash<>$2", p.UserID, p.SessionHash)
+	// Agent connections have their own revocation control; this signs out browsers.
+	result, e := tx.Exec(ctx, "DELETE FROM sessions WHERE user_id=$1 AND token_hash<>$2 AND oauth_grant_id IS NULL", p.UserID, p.SessionHash)
 	if e != nil {
 		return 0, e
 	}
@@ -447,5 +449,8 @@ func (s *Store) Cleanup(ctx context.Context) error {
 		return e
 	}
 	_, e = s.Pool.Exec(ctx, "DELETE FROM challenges WHERE created_at<now()-interval '1 day'")
-	return e
+	if e != nil {
+		return e
+	}
+	return s.cleanupOAuth(ctx)
 }

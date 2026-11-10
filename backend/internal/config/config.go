@@ -13,6 +13,12 @@ type Config struct {
 	AllowedOrigins                                  map[string]bool
 	CookieSecure                                    bool
 	SessionTTL                                      time.Duration
+	// PublicOrigin is the canonical origin used as the OAuth issuer and in the
+	// MCP resource URL. It must be one of AllowedOrigins.
+	PublicOrigin string
+	// OpenAIAppsChallenge is served at /.well-known/openai-apps-challenge for
+	// OpenAI's domain verification; unset means the path is not found.
+	OpenAIAppsChallenge string
 }
 
 func Load() (Config, error) { return Parse(os.Getenv) }
@@ -44,6 +50,7 @@ func Parse(get func(string) string) (Config, error) {
 	}
 	allTLS := true
 	seenHTTPS := false
+	first := ""
 	for _, origin := range strings.Split(origins, ",") {
 		origin = strings.TrimSpace(origin)
 		u, e := url.Parse(origin)
@@ -59,11 +66,25 @@ func Parse(get func(string) string) (Config, error) {
 			seenHTTPS = true
 		}
 		c.AllowedOrigins[origin] = true
+		if first == "" {
+			first = origin
+		}
 	}
 	if seenHTTPS && !allTLS {
 		return c, fmt.Errorf("do not mix HTTP and HTTPS origins; HTTPS requires secure cookies")
 	}
 	c.CookieSecure = allTLS
+	c.PublicOrigin = strings.TrimSpace(get("THROUGH_PUBLIC_ORIGIN"))
+	if c.PublicOrigin == "" {
+		c.PublicOrigin = first
+	}
+	if !c.AllowedOrigins[c.PublicOrigin] {
+		return c, fmt.Errorf("THROUGH_PUBLIC_ORIGIN must be one of THROUGH_ALLOWED_ORIGINS")
+	}
+	c.OpenAIAppsChallenge = strings.TrimSpace(get("THROUGH_OPENAI_APPS_CHALLENGE"))
+	if len(c.OpenAIAppsChallenge) > 256 || strings.ContainsAny(c.OpenAIAppsChallenge, "\r\n<>") {
+		return c, fmt.Errorf("THROUGH_OPENAI_APPS_CHALLENGE must be a short single-line token")
+	}
 	if c.MetricsToken != "" && len(c.MetricsToken) < 32 {
 		return c, fmt.Errorf("THROUGH_METRICS_TOKEN must contain at least 32 characters")
 	}

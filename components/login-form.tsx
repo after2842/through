@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { APIError, errorMessage, getSession, requestSignIn, verifySignIn, type SignInChallenge } from "@/lib/client";
+import { APIError, errorMessage, getSession, requestSignIn, safeReturnPath, verifySignIn, type SignInChallenge } from "@/lib/client";
 import styles from "./login-form.module.css";
 
 export default function LoginForm() {
@@ -21,6 +21,14 @@ export default function LoginForm() {
   const busyRef = useRef(false);
   const loadSequence = useRef(0);
   const changedStep = useRef(false);
+  const [returnPath, setReturnPath] = useState<string | null>(null);
+  const returnRef = useRef<string | null>(null);
+
+  // After sign-in, an app connection continues to its consent step.
+  const finish = useCallback(() => {
+    if (returnRef.current) window.location.assign(returnRef.current);
+    else router.replace("/");
+  }, [router]);
 
   const checkSession = useCallback(async () => {
     const sequence = ++loadSequence.current;
@@ -29,17 +37,19 @@ export default function LoginForm() {
     try {
       const session = await getSession();
       if (!mounted.current || sequence !== loadSequence.current) return;
-      if (session) { router.replace("/"); return; }
+      if (session) { finish(); return; }
       setChecking(false);
     } catch (failure) {
       if (!mounted.current || sequence !== loadSequence.current) return;
       setLoadError(errorMessage(failure));
       setChecking(false);
     }
-  }, [router]);
+  }, [finish]);
 
   useEffect(() => {
     mounted.current = true;
+    returnRef.current = safeReturnPath(new URLSearchParams(window.location.search).get("next"));
+    setReturnPath(returnRef.current);
     void checkSession();
     return () => { mounted.current = false; loadSequence.current += 1; };
   }, [checkSession]);
@@ -83,7 +93,7 @@ export default function LoginForm() {
     setBusy(true);
     try {
       await verifySignIn(challenge, code);
-      if (mounted.current) router.replace("/");
+      if (mounted.current) finish();
     } catch (failure) {
       if (!mounted.current) return;
       setError(errorMessage(failure));
@@ -118,6 +128,7 @@ export default function LoginForm() {
     <div className={styles.formBlock}>
       <h1 className={styles.title}>{challenge ? "One quick check." : "Welcome through."}</h1>
       {challenge && <p className={styles.intro}>Enter the demo code to continue.</p>}
+      {!challenge && returnPath && <p className={styles.intro}>Sign in to connect an app to through.</p>}
       {!challenge ? (
         <form className={styles.form} onSubmit={continueToCode} aria-busy={busy}>
           <label className={styles.label} htmlFor="email">Email</label>

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "through": {
+      "type": "http",
+      "url": "https://through-974039737273.us-central1.run.app/mcp"
+    }
+  }
+}

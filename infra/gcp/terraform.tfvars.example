@@ -1,0 +1,5 @@
+project_id = "your-gcp-project-id"
+region     = "us-central1"
+# public_origin = "https://app.example.com"  # after mapping a custom domain
+# min_instances = 1                          # avoid cold starts during directory review
+# openai_apps_challenge = "token-from-openai-portal"

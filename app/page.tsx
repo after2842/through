@@ -75,7 +75,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <footer className="app-footer"><EnvironmentNote /></footer>
+      <footer className="app-footer"><EnvironmentNote /><span aria-hidden="true">·</span><Link href="/privacy/">Privacy</Link><Link href="/terms/">Terms</Link></footer>
     </div>
   );
   return <HomeRouter publicHome={publicHome} />;

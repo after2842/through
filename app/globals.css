@@ -82,6 +82,8 @@ h1 { margin: 0; font-family: var(--serif); font-weight: 400; letter-spacing: -.0
 .app-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0 64px; }
 .app-footer { display: flex; justify-content: center; gap: 8px; align-items: center; flex-shrink: 0; padding: 27px 0 30px; margin-top: 24px; font-size: 11px; line-height: 1.6; color: var(--muted); }
 .app-footer span { color: var(--faint); }
+.app-footer a { color: var(--muted); }
+.app-footer a:hover { color: var(--ink); }
 @media (min-width: 1600px) {
   .page { width: 1240px; }.masthead { min-height: 130px; }
 }

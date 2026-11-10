@@ -31,6 +31,19 @@ D01–D20 preserve the evidence from the first sandbox iteration. Later sections
 | D19 | Accessibility and themes | Keyboard flow, labels, custom dropdown behavior, visible focus, reduced motion, readable contrast, and 320/390 px layouts work in both themes. Status/error announcements are usable. | Partially verified — source has semantic controls, focus management, live/error regions and reduced-motion styling. Root checked login/accounts/Activity at 390 and 320 px with no horizontal overflow. Full accessibility and screen-reader audits are not claimed |
 | D20 | Engineering checks | Go build/vet, race-enabled meaningful tests, database-backed integration tests, Next.js production build, and appropriate dependency checks complete. Record exact commands and any gaps. | Verified locally — service frontend rebuild, Go vet, race/coverage tests with real PostgreSQL, static Go build, npm production audit, and updated Go vulnerability scan passed. Docker and hosted CI runs were not executed |
 
+## Agent connections, hosting, and plugin checks (November 10, 2026)
+
+| ID | Check | Pass condition | Status / evidence |
+|---|---|---|---|
+| A01 | OAuth discovery and registration | Protected-resource and authorization-server metadata point to this server; DCR rejects non-HTTPS non-loopback redirects, other grant types, and malformed bodies | Verified — real-PostgreSQL integration tests (`TestAgentConnectionOAuthAndMCPFlow`, `TestAgentConnectionMemberRoleAndRegistrationLimits`) |
+| A02 | Authorization boundaries | Unknown client or unregistered redirect never redirects; PKCE S256 required; consent requires the public Origin and session CSRF token; codes are single use and replay revokes the grant | Verified — integration tests; real-browser flow found and fixed `Origin: null` caused by `Referrer-Policy: no-referrer`, now covered by a test |
+| A03 | Token lifecycle | Access tokens are rejected as cookies; refresh tokens rotate; reuse revokes the grant; Settings disconnect ends access immediately; signing out other browser sessions leaves agent connections | Verified — integration tests |
+| A04 | MCP protocol and tools | Unauthenticated requests get `401` with a resource-metadata pointer; initialize negotiates the version; four tools carry titles and annotations; strict arguments; members cannot request sign-in or read activity; pause blocks sign-in requests; retries with `requestId` are idempotent | Verified — integration tests and the official MCP TypeScript SDK client 1.32.2 against a local service |
+| A05 | Cross-site consent in a browser | Starting on another site while signed out reaches login, then consent; while signed in, the login page bounces to consent; Allow returns `code`, `state`, and `iss`; Cancel returns `access_denied` | Verified — Playwright Chromium against the local service-mode build |
+| A06 | Cloud SQL socket URL | The Terraform connection-string form (`localhost` host overridden by `host=/cloudsql/…`) connects over a Unix socket | Verified locally against PostgreSQL on a Unix socket |
+| A07 | Terraform | `terraform fmt` and `validate` pass; apply creates a working service | Formatting checked with HashiCorp's `hclwrite`; `validate` runs in CI; not yet applied |
+| A08 | Plugin package | Claude validation passes for the plugin and marketplace; Codex can install it; no hooks or local servers | Verified — `claude plugin validate` (no findings) and Codex CLI 0.167 marketplace install; OpenAI portal validation not run |
+
 ## Pilot blockers: external and operational gates
 
 | ID | Gate | Required evidence | Current status |

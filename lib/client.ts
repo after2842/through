@@ -302,3 +302,18 @@ export async function testHandoff(account: DemoAccount, idempotencyKey: string, 
   demoHandoffs.set(idempotencyKey, { fingerprint, result });
   return result;
 }
+
+export type AgentConnection = { id: string; clientName: string; redirectHost: string; agent: AgentName; userEmail: string; mine: boolean; createdAt: string; lastUsedAt: string | null };
+export async function getAgentConnections(): Promise<AgentConnection[]> {
+  if (!serviceMode) return [];
+  return (await request<{ connections: AgentConnection[] }>("/agent-connections")).connections;
+}
+export async function revokeAgentConnection(id: string): Promise<AgentConnection[]> {
+  if (!serviceMode) return [];
+  return (await request<{ connections: AgentConnection[] }>(`/agent-connections/${encodeURIComponent(id)}`, { method: "DELETE", authenticated: true })).connections;
+}
+// Only the OAuth consent step may be a post-sign-in destination.
+export function safeReturnPath(value: string | null): string | null {
+  if (!serviceMode || !value || !value.startsWith("/oauth/authorize?") || value.includes("\\") || value.length > 4096) return null;
+  return value;
+}

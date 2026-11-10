@@ -1,0 +1,10 @@
+# Builds the repository's root Dockerfile. deploy.sh passes _IMAGE.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "--build-arg", "NEXT_PUBLIC_SUPPORT_EMAIL=${_SUPPORT_EMAIL}", "-t", "${_IMAGE}", "."]
+images: ["${_IMAGE}"]
+substitutions:
+  _IMAGE: ""
+  _SUPPORT_EMAIL: ""
+options:
+  logging: CLOUD_LOGGING_ONLY

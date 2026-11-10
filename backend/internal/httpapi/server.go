@@ -92,6 +92,20 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/v1/audit", s.auth(http.HandlerFunc(s.audit)))
 	mux.Handle("POST /api/v1/handoffs", s.auth(http.HandlerFunc(s.handoff)))
 	mux.Handle("GET /api/v1/handoffs/{id}", s.auth(http.HandlerFunc(s.getHandoff)))
+	mux.Handle("GET /api/v1/agent-connections", s.auth(http.HandlerFunc(s.agentConnections)))
+	mux.Handle("DELETE /api/v1/agent-connections/{id}", s.auth(http.HandlerFunc(s.revokeAgentConnection)))
+	// OAuth 2.1 authorization server and the MCP resource for agent connections.
+	mux.HandleFunc("GET /.well-known/oauth-protected-resource", s.protectedResourceMetadata)
+	mux.HandleFunc("GET /.well-known/oauth-protected-resource/mcp", s.protectedResourceMetadata)
+	mux.HandleFunc("GET /.well-known/oauth-authorization-server", s.authorizationServerMetadata)
+	mux.HandleFunc("GET /.well-known/openai-apps-challenge", s.openAIChallenge)
+	mux.HandleFunc("POST /oauth/register", s.register)
+	mux.HandleFunc("GET /oauth/authorize", s.authorize)
+	mux.HandleFunc("POST /oauth/authorize", s.authorizeDecision)
+	mux.HandleFunc("POST /oauth/token", s.token)
+	mux.HandleFunc("/oauth/", func(w http.ResponseWriter, r *http.Request) { s.fail(w, r, core.ErrNotFound) })
+	mux.HandleFunc("POST /mcp", s.mcp)
+	mux.HandleFunc("/mcp", s.mcpMethodNotAllowed)
 	// Method mismatches and unknown API routes are JSON, never a static fallback.
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { s.fail(w, r, core.ErrNotFound) })
 	mux.HandleFunc("/", s.static)
@@ -484,6 +498,24 @@ func (s *Server) middleware(next http.Handler) http.Handler {
 			if strings.HasPrefix(r.URL.Path, "/api/v1/auth/") {
 				bucketKey += "/auth"
 				max = 30
+			}
+			if !s.limiter.allow(bucketKey, max, started) {
+				s.fail(w, r, core.ErrRateLimit)
+				return
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+			defer cancel()
+			r = r.WithContext(ctx)
+		} else if strings.HasPrefix(r.URL.Path, "/oauth/") || r.URL.Path == "/mcp" || strings.HasPrefix(r.URL.Path, "/.well-known/") {
+			// Called server-to-server by MCP clients, so no Origin is required here;
+			// the consent form checks its own Origin and CSRF token.
+			ip, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				ip = r.RemoteAddr
+			}
+			bucketKey, max := ip+"/agent", 240
+			if r.URL.Path == "/oauth/register" {
+				bucketKey, max = ip+"/register", 20
 			}
 			if !s.limiter.allow(bucketKey, max, started) {
 				s.fail(w, r, core.ErrRateLimit)

@@ -35,6 +35,8 @@ Alternatively, run `npm run build:service` at the repository root, then run `doc
 | `THROUGH_ADDR` | `127.0.0.1:8080` | Listener; containers explicitly use `0.0.0.0:8080` |
 | `THROUGH_STATIC_DIR` | Unset | Optional Next.js export directory; unset serves only API/health/metrics |
 | `THROUGH_METRICS_TOKEN` | Unset, endpoint disabled | At least 32 random characters; send `Authorization: Bearer …` |
+| `THROUGH_PUBLIC_ORIGIN` | First allowed origin | Canonical origin for the OAuth issuer and MCP resource URL; must be one of `THROUGH_ALLOWED_ORIGINS` |
+| `THROUGH_OPENAI_APPS_CHALLENGE` | Unset, path not found | OpenAI domain-verification token served at `/.well-known/openai-apps-challenge` |
 | `THROUGH_TEST_DATABASE_URL` | Tests only | Dedicated database in which tests create/drop isolated schemas |
 
 Never put database credentials or metrics tokens in a committed file. `.env.example` is illustrative; the service reads environment variables, not dotenv files.
@@ -62,6 +64,8 @@ All unsafe API requests require an exact allowed `Origin`. Authenticated mutatio
 | `GET /api/v1/audit` | `limit=1..100`, optional `cursor`, optional `accountId` | `{events:[], nextCursor?}` |
 | `POST /api/v1/handoffs` | `{accountId, agent, targetOrigin, browserSessionId, tabId}` plus `Idempotency-Key` | 201 new receipt or 200 exact replay |
 | `GET /api/v1/handoffs/{id}` | — | Workspace-scoped receipt |
+| `GET /api/v1/agent-connections` | — | `{connections:[]}`: live OAuth grants; owners/admins see the workspace's, others their own |
+| `DELETE /api/v1/agent-connections/{id}` | No body | Revokes the grant immediately; returns the remaining list |
 
 A Session DTO contains `{user:{id,email,displayName,role}, workspace:{id,name,accessPaused}, accounts:Account[], csrfToken, mode:"demo", expiresAt}`. Each account contains `{id,service,agent,agents,origin,username,createdAt,credentialUpdatedAt,credentialVersion,simulated:true}`. `agent` is a compatibility value containing the first permitted agent or an empty string; `agents` is always an array. Dates are RFC 3339 strings. Responses are `Cache-Control: no-store`. Sessions expire after 8 hours and are not silently extended.
 
@@ -84,6 +88,24 @@ A handoff receipt contains `{id,accountId,agent,targetOrigin,browserSessionId,ta
 Audit events contain `{id,action,actorEmail,occurredAt,target?,accountId?}`. The cursor is the last integer event ID. All cursor reads remain workspace-scoped. `accountId` filters on the server and requires an account from the current workspace, including disconnected accounts; foreign or unknown IDs return 404. Members/viewers cannot read either scoped or workspace-wide logs. Events include sign-in/out, simulated account connection/revocation, pause/resume, `account.agents_updated`, `credential.updated`, and simulated handoff. Permission events record previous and new permitted agents in the target label. Targets contain non-secret platform/agent labels, never usernames, submitted URLs, or credentials. Audit actor email is intentional personal data. Events written before migration 004 remain immutable and have no account ID, so they appear only in workspace-wide activity.
 
 Errors are `{error:{code,message},requestId}`. Common statuses are 400 invalid input, 401 missing/invalid/expired session or code, 403 policy/CSRF/origin denial, 404 inaccessible resource, 409 duplicate/replay conflict, 415 unsupported content type, and 429 retry later. Internal database errors and submitted values never reach error responses.
+
+## Agent connections: OAuth and MCP
+
+MCP clients reach the service as an OAuth 2.1 resource. These routes need no browser Origin because clients call them server-to-server; they share a per-IP limit, and registration has its own lower limit.
+
+| Route | Purpose |
+|---|---|
+| `GET /.well-known/oauth-protected-resource[/mcp]` | RFC 9728 metadata: resource `<public origin>/mcp`, authorization server `<public origin>` |
+| `GET /.well-known/oauth-authorization-server` | RFC 8414 metadata: DCR, PKCE S256 only, public clients only (`token_endpoint_auth_methods_supported: ["none"]`) |
+| `POST /oauth/register` | RFC 7591 registration. Redirect URIs must be HTTPS, an http loopback URI, or a private-use app scheme. Every client is public. |
+| `GET /oauth/authorize` | Validates the client and redirect before anything else (a bad one renders an error page and never redirects). Without a browser session it sends the user to `/login/?next=…`, because the SameSite=Strict cookie is not sent on a cross-site navigation; the login page returns once signed in. With a session it renders the consent page. |
+| `POST /oauth/authorize` | Consent decision. Requires the exact public Origin and the session CSRF token. The user chooses the agent the connection acts as. Issues a five-minute, single-use code bound to the client, redirect URI, PKCE challenge, user, workspace, and agent. |
+| `POST /oauth/token` | `authorization_code` (PKCE verified) and `refresh_token`. Access tokens last one hour; refresh tokens 30 days and rotate on every use. |
+| `POST /mcp` | Stateless Streamable HTTP MCP: one JSON-RPC message per request, JSON responses, no sessions or server streams. Requires a bearer access token; without one it answers `401` with a `WWW-Authenticate` pointer to the resource metadata. `GET`/`DELETE` return 405. |
+
+An access token is a row in `sessions` bound to an `oauth_grants` row, so the existing membership, role, pause, and revocation checks apply to MCP calls unchanged. Cookie authentication rejects those rows and bearer authentication accepts only them, so an access token cannot act as a browser session. Signing out other browser sessions does not affect agent connections; disconnecting one in Settings deletes its access sessions and stops its refresh token. Presenting a rotated refresh token or replaying an authorization code revokes the grant and records an audit event.
+
+Tools take the agent from the grant, never from tool input. `request_sign_in` calls the same simulated handoff as `POST /api/v1/handoffs`, so it needs an owner/admin connection, an account whose exact origin matches, and an agent permission; it reports `credentialsEntered: false`. Tool inputs are strict JSON objects; unknown fields such as `password` are rejected. Client names come from registration, are shown as self-reported, and are sanitized for display and audit labels.
 
 ## Enforcement and concurrency
 

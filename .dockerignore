@@ -1,0 +1,12 @@
+.git
+.github
+.next
+node_modules
+out
+*.tsbuildinfo
+.env
+.env.*
+backend/.env
+infra
+plugin
+docs

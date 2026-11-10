@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import WorkspaceShell from "./workspace-shell";
 import SelectField from "./select-field";
-import { APIError, canManage, errorMessage, getSession, updateProfile, signOut, signOutOtherSessions, type WorkspaceSession } from "@/lib/client";
+import { APIError, canManage, errorMessage, getAgentConnections, getSession, revokeAgentConnection, updateProfile, signOut, signOutOtherSessions, type AgentConnection, type WorkspaceSession } from "@/lib/client";
 import { useThemePreference, type ThemePreference } from "@/lib/theme";
 import styles from "./user-settings.module.css";
 
@@ -21,7 +21,10 @@ export default function UserSettings() {
   const [profileStatus, setProfileStatus] = useState("");
   const [securityError, setSecurityError] = useState("");
   const [securityStatus, setSecurityStatus] = useState("");
-  const [busy, setBusy] = useState<"profile" | "others" | "logout" | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [connections, setConnections] = useState<AgentConnection[] | null>(null);
+  const [connectionError, setConnectionError] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState("");
   const alive = useRef(false);
   const pending = useRef(false);
 
@@ -33,12 +36,13 @@ export default function UserSettings() {
       if (cancelled) return;
       if (!current) { router.replace("/login/"); return; }
       setSession(current); setName(current.user.displayName);
+      if (current.backend) void getAgentConnections().then(list => { if (!cancelled) setConnections(list); }).catch(error => { if (!cancelled) setConnectionError(errorMessage(error)); });
     }).catch(error => { if (!cancelled) setLoadError(errorMessage(error)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; alive.current = false; };
   }, [revision, router]);
 
-  function begin(action: "profile" | "others" | "logout") {
+  function begin(action: string) {
     if (pending.current) return false;
     pending.current = true; setBusy(action); return true;
   }
@@ -66,6 +70,16 @@ export default function UserSettings() {
       const result = await signOutOtherSessions();
       if (alive.current) setSecurityStatus(result.revokedSessions ? `${result.revokedSessions} other ${result.revokedSessions === 1 ? "session signed" : "sessions signed"} out. This session stays active.` : "No other active sessions. You’re still signed in here.");
     } catch (error) { fail(error, setSecurityError); }
+    finally { finish(); }
+  }
+  async function disconnect(connection: AgentConnection) {
+    if (!begin(`revoke:${connection.id}`)) return;
+    setConnectionError(""); setConnectionStatus("");
+    try {
+      const next = await revokeAgentConnection(connection.id);
+      if (!alive.current) return;
+      setConnections(next); setConnectionStatus(`${connection.clientName} disconnected. It can no longer act for you.`);
+    } catch (error) { fail(error, setConnectionError); }
     finally { finish(); }
   }
   async function leave() {
@@ -102,6 +116,25 @@ export default function UserSettings() {
           <h2 id="appearance-heading">Appearance</h2>
           <div className={styles.content}><SelectField id="appearance" label="Theme" value={preference} options={["System", "Light", "Dark"]} placeholder="Choose a theme" onChange={value => setPreference(value as ThemePreference)} /><p className={styles.hint}>Saved on this browser.</p></div>
         </section>
+        <section className={styles.section} aria-labelledby="agents-heading">
+          <h2 id="agents-heading">Agent connections</h2>
+          <div className={styles.content}>
+            {!session.backend ? <p className={styles.hint}>Apps connect to the through service, not this browser demo.</p>
+              : connections === null && !connectionError ? <p className={styles.hint}>Loading connections…</p>
+              : connections && connections.length > 0 ? <ul className={styles.connections}>
+                {connections.map(connection => <li key={connection.id}>
+                  <div>
+                    <p className={styles.value}>{connection.clientName} <span className={styles.muted}>· signs in as {connection.agent}</span></p>
+                    <p className={styles.hint}>Returns to {connection.redirectHost} · Connected {formatDate(connection.createdAt)} · {connection.lastUsedAt ? `Last used ${formatDate(connection.lastUsedAt)}` : "Not used yet"}{connection.mine ? "" : ` · ${connection.userEmail}`}</p>
+                  </div>
+                  <button className={styles.textButton} disabled={busy !== null} onClick={() => void disconnect(connection)} aria-label={`Disconnect ${connection.clientName}`}>{busy === `revoke:${connection.id}` ? "Disconnecting…" : "Disconnect"}</button>
+                </li>)}
+              </ul>
+              : !connectionError && <p className={styles.hint}>No apps are connected. Add through to Claude or ChatGPT as a connector with the address <span className={styles.code}>{typeof window === "undefined" ? "/mcp" : `${window.location.origin}/mcp`}</span>.</p>}
+            {connectionError && <p className={styles.error} role="alert">{connectionError}</p>}
+            <p className={styles.status} role="status">{connectionStatus}</p>
+          </div>
+        </section>
         <section className={styles.section} aria-labelledby="plan-heading">
           <h2 id="plan-heading">Plan</h2>
           <div className={`${styles.content} ${styles.inline}`}><div><p className={styles.value}>Personal · $0 / month</p><p className={styles.hint}>Free during preview. No payment method or automatic charges.</p></div><Link href="/pricing/" className="quiet-link">View plans <span aria-hidden="true">↗</span></Link></div>
@@ -121,4 +154,8 @@ export default function UserSettings() {
       </>}
     </main>
   </WorkspaceShell>;
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }

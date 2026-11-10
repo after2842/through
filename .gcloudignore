@@ -1,0 +1,12 @@
+# Files Cloud Build does not need (gcloud builds submit uploads the rest).
+.git
+.github
+.next
+node_modules
+out
+*.tsbuildinfo
+.env
+.env.*
+infra/**/.terraform
+infra/**/*.tfstate*
+infra/**/*.tfvars

@@ -180,6 +180,17 @@ type Store interface {
 	Audit(context.Context, *Principal, int64, int, ...string) (*AuditPage, error)
 	CreateHandoff(context.Context, *Principal, HandoffInput, string) (*Handoff, bool, error)
 	Handoff(context.Context, *Principal, string) (*Handoff, error)
+
+	// Agent connections: OAuth 2.1 for MCP clients. Access tokens authenticate
+	// only through AuthenticateBearer; Authenticate (cookies) rejects them.
+	RegisterClient(ctx context.Context, name string, redirectURIs []string) (*OAuthClient, error)
+	OAuthClient(ctx context.Context, id string) (*OAuthClient, error)
+	CreateAuthCode(context.Context, *Principal, AuthCodeInput) (string, error)
+	ExchangeCode(ctx context.Context, code, clientID, redirectURI, verifier string) (*TokenSet, error)
+	RefreshTokens(ctx context.Context, refreshToken, clientID string) (*TokenSet, error)
+	AuthenticateBearer(ctx context.Context, token string) (*Principal, string, error)
+	AgentConnections(context.Context, *Principal) ([]AgentConnection, error)
+	RevokeAgentConnection(context.Context, *Principal, string) error
 }
 
 // IdentityProvider never receives a password. A production provider must perform

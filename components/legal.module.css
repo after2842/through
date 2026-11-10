@@ -1,0 +1,11 @@
+.main { width: min(100%, 720px); margin: 0 auto; padding: 24px 0 96px; font-size: 15px; line-height: 1.75; }
+.main h1 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 6vw, 64px); line-height: 1.05; letter-spacing: -.03em; }
+.updated { margin: 16px 0 0; color: var(--muted); font-size: 13px; }
+.main h2 { margin: 48px 0 0; padding-top: 24px; border-top: 1px solid var(--line); font-size: 16px; font-weight: 500; line-height: 1.5; }
+.main p, .main ul { margin: 12px 0 0; }
+.main ul { padding-left: 20px; }
+.main li + li { margin-top: 6px; }
+.main a { color: var(--sky-ink); text-decoration: underline; text-underline-offset: 3px; }
+.lead { color: var(--muted); }
+.footer { display: flex; justify-content: center; gap: 24px; padding: 24px 0 32px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.footer a:hover { color: var(--ink); }
