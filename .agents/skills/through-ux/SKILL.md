@@ -17,12 +17,12 @@ Do this before polishing the visual treatment. A smaller font or more compact ca
 
 ## Visual direction
 
-- Use warm ivory `#faf8f1`, sky blue `#c6e3f4`, dark ink `#242b29`, and blue ink `#3e7695`. Sky blue is the accent; mint is retired. Use dark text on pale blue where contrast requires it.
+- Use warm ivory `#faf8f1`, sky blue `#c6e3f4`, dark ink `#242b29`, and blue ink `#3e7695`. Sky blue is the accent; mint is retired. Use dark text on pale blue where contrast requires it. On the landing page the primary action is ink with paper text, and sky marks where through itself acts (the grant strip, the field being filled, the active step).
 - Dark mode uses graphite `#191a20`, slightly lifted surfaces `#23252e`, muted ice blue `#b8c9e5`, and warm chalk `#eae7e2`. Keep it restrained; use shared semantic color tokens across every state and check readable contrast in both themes.
 - Retain Instrument Serif for expressive headings and DM Sans for functional copy. Give typography and space the work usually assigned to cards and decoration.
 - Prefer quiet, unboxed compositions, thin rules, and deliberate alignment. Seek a layout that fits the content instead of defaulting to a centered hero followed by interchangeable card grids.
 - Novelty must improve hierarchy or comprehension. Keep familiar controls and expected interaction behavior.
-- The signed-out landing page has its main composition and exactly one lower section illustrating a concrete use case. Use screenshot-like fictional screens to show password entry and resumed work, with masked dots and an illustrative-demo label. Add further sections only when the user changes that scope.
+- The signed-out landing page has four parts: the headline with an interactive demo of an agent signing in from its built-in browser, How it works (three steps), Controls (six controls and one Preview status line), and a closing action. The demo uses screenshot-like fictional screens to show credential entry and resumed work, with masked dots and an illustrative-demo label. Add further sections only when the user changes that scope.
 
 ## Content and interaction
 

@@ -44,7 +44,7 @@ export default function HomeRouter({ publicHome }: { publicHome: ReactNode }) {
 
   useEffect(() => {
     if (loaded && !error && window.location.pathname === "/") {
-      document.title = session ? "Your workspace — through" : "through — Past the login. Back to work.";
+      document.title = session ? "Your workspace — through" : "through — Your agent signs in. The work continues.";
     }
   }, [loaded, error, session]);
 
